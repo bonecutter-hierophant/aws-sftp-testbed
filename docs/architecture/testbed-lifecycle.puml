@@ -1,0 +1,25 @@
+@startuml
+title Disposable AWS SFTP Testbed Lifecycle
+
+actor "Developer / CI / Agent" as User
+participant "scripts/*.sh" as Scripts
+participant "AWS CLI" as AwsCli
+cloud "CloudFormation Stack" as Stack
+node "EC2 SFTP Instance" as Ec2
+database "Secrets Manager" as Secrets
+
+User -> Scripts: deploy with AllowedCidr
+Scripts -> Scripts: validate safety inputs
+Scripts -> AwsCli: cloudformation deploy
+AwsCli -> Stack: create/update resources
+Stack -> Ec2: boot and configure internal-sftp
+Scripts -> AwsCli: describe stack/instance
+AwsCli --> Scripts: current public host
+Scripts -> Secrets: write connection secret
+
+User -> Scripts: smoke-test
+Scripts -> Ec2: connect/upload/list/download/delete
+
+User -> Scripts: stop or destroy
+Scripts -> AwsCli: stop instance or delete stack
+@enduml

@@ -1,0 +1,38 @@
+{
+  "name": "aws-sftp-testbed",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Disposable AWS SFTP testbed for integration testing.",
+  "type": "module",
+  "scripts": {
+    "verify:structure": "node tools/check-structure.mjs",
+    "verify:public-sanitization": "node tools/check-public-sanitization.mjs",
+    "verify:shell-static": "node tools/check-shell-static.mjs",
+    "verify:docs": "node tools/check-docs-whitespace.mjs",
+    "verify:scoped": "node tools/run-verification.mjs",
+    "verify:safe": "node tools/run-verification.mjs preset:safe",
+    "verify:list": "node tools/run-verification.mjs --list",
+    "verify:recommend:dirty": "node tools/run-verification.mjs --recommend --dirty",
+    "deploy": "bash scripts/deploy.sh",
+    "start": "bash scripts/start.sh",
+    "stop": "bash scripts/stop.sh",
+    "destroy": "bash scripts/destroy.sh",
+    "describe": "bash scripts/describe.sh",
+    "smoke:test": "bash scripts/smoke-test.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bonecutter-hierophant/aws-sftp-testbed.git"
+  },
+  "keywords": [
+    "aws",
+    "sftp",
+    "cloudformation",
+    "integration-testing"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/bonecutter-hierophant/aws-sftp-testbed/issues"
+  }
+}

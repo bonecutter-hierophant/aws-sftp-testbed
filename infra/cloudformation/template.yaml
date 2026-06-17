@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Disposable AWS SFTP testbed scaffold. Resources are intentionally not implemented in the first structure commit.
+
+Parameters:
+  AllowedCidr:
+    Type: String
+    Description: CIDR allowed to reach TCP 22 on the SFTP testbed. Required by deploy scripts.
+    AllowedPattern: "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+  ProjectName:
+    Type: String
+    Default: aws-sftp-testbed
+    Description: Project tag value for disposable resources.
+
+Resources: {}
+
+Outputs:
+  ProjectName:
+    Description: Project name tag used by the testbed.
+    Value: !Ref ProjectName
