@@ -4,9 +4,9 @@ title Disposable AWS SFTP Testbed Lifecycle
 actor "Developer / CI / Agent" as User
 participant "scripts/*.sh" as Scripts
 participant "AWS CLI" as AwsCli
-cloud "CloudFormation Stack" as Stack
-node "EC2 SFTP Instance" as Ec2
-database "Secrets Manager" as Secrets
+participant "CloudFormation Stack" as Stack
+participant "EC2 SFTP Instance" as Ec2
+participant "Secrets Manager" as Secrets
 
 User -> Scripts: deploy with AllowedCidr
 Scripts -> Scripts: validate safety inputs

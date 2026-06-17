@@ -8,6 +8,7 @@ Before changing code:
 - Read `docs/operations/public-repository-sanitization.md` before first commit, PR, or push.
 - Read `docs/operations/aws-sftp-boundary.md` before AWS CLI, CloudFormation, Secrets Manager, EC2, IAM, or network-security work.
 - Read `docs/operations/aws-access-setup.md` before creating or documenting project-scoped AWS users, roles, policies, profiles, or account setup.
+- Read `docs/operations/diagram-rendering.md` before adding or changing PlantUML diagram workflow.
 - Read `docs/operations/sandbox-safe-verification.md` before adding or changing verification tooling.
 - Use `docs/operations/feature-development-workflow.md` for non-trivial feature work.
 - Read the relevant local `README.md` beside scripts, infrastructure templates, or docs being changed.

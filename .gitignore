@@ -46,6 +46,7 @@ describe-*.json
 secret-*.json
 aws-output-*.json
 smoke-test-*.json
+UML.png
 
 # Build/package output
 dist/

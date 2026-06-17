@@ -13,6 +13,7 @@ Before implementation:
 - Read `docs/operations/public-repository-sanitization.md` before first commit, PR, or push.
 - Read `docs/operations/aws-sftp-boundary.md` before AWS CLI, CloudFormation, Secrets Manager, EC2, IAM, or network-security work.
 - Read `docs/operations/aws-access-setup.md` before creating or documenting project-scoped AWS users, roles, policies, profiles, or account setup.
+- Read `docs/operations/diagram-rendering.md` before changing PlantUML diagram workflow.
 - Read `docs/operations/sandbox-safe-verification.md` before changing verification tooling.
 - Read `docs/operations/scoped-verification-gates.md` before naming verification.
 - For cross-cutting structure changes, update `docs/architecture/project-structure.md` and `docs/architecture/testbed-lifecycle.puml`.
@@ -31,6 +32,7 @@ Create a proposal in `docs/proposals/` before implementation when work changes:
 - credential-generation behavior
 - lifecycle semantics for deploy, start, stop, or destroy
 - repository workflow or verification tooling
+- diagram rendering workflow
 
 The proposal should include scope, public-repo safety notes, dependencies, implementation steps, verification gates, out-of-scope items, and a closeout checklist.
 

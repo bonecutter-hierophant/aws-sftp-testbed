@@ -1,0 +1,31 @@
+{
+  "plantuml.render": "Local",
+  "plantuml.commandArgs": [
+    "-DGRAPHVIZ_DOT=C:\\Program Files\\Graphviz\\bin\\dot.exe"
+  ],
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/awslabs/goformation/master/schema/cloudformation.schema.json": [
+      "infra/cloudformation/template.yaml"
+    ]
+  },
+  "yaml.customTags": [
+    "!And sequence",
+    "!Base64 scalar",
+    "!Cidr sequence",
+    "!Equals sequence",
+    "!FindInMap scalar",
+    "!FindInMap sequence",
+    "!GetAtt scalar",
+    "!GetAtt sequence",
+    "!If sequence",
+    "!ImportValue scalar",
+    "!Join sequence",
+    "!Not sequence",
+    "!Or sequence",
+    "!Ref scalar",
+    "!Select sequence",
+    "!Split sequence",
+    "!Sub scalar",
+    "!Sub sequence"
+  ]
+}

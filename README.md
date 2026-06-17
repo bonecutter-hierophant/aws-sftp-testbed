@@ -47,6 +47,7 @@ The MVP should provide AWS CLI wrapper scripts that can:
 - Public repository sanitization: `docs/operations/public-repository-sanitization.md`
 - AWS SFTP boundary: `docs/operations/aws-sftp-boundary.md`
 - AWS access setup: `docs/operations/aws-access-setup.md`
+- Diagram rendering: `docs/operations/diagram-rendering.md`
 - Sandbox-safe verification: `docs/operations/sandbox-safe-verification.md`
 - Verification gates: `docs/operations/scoped-verification-gates.md`
 - Project structure: `docs/architecture/project-structure.md`
@@ -72,6 +73,10 @@ Run the normal first-commit structure lane:
 ```text
 npm run verify:scoped structure,public-sanitization,shell-static,docs
 ```
+
+## Diagram Rendering
+
+PlantUML diagrams follow the SimpleETL local-preview workflow. Install Java SDK, Graphviz, and the recommended VS Code PlantUML extension, then preview `.puml` files from VS Code. Details live in `docs/operations/diagram-rendering.md`.
 
 ## Public Repository Boundary
 

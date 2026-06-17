@@ -10,6 +10,9 @@ const requiredFiles = [
   "README.md",
   "AGENTS.md",
   ".gitignore",
+  ".vscode/extensions.json",
+  ".vscode/settings.json",
+  ".vscode/tasks.json",
   "package.json",
   "docs/architecture/README.md",
   "docs/architecture/project-structure.md",
@@ -19,6 +22,7 @@ const requiredFiles = [
   "docs/operations/public-repository-sanitization.md",
   "docs/operations/aws-sftp-boundary.md",
   "docs/operations/aws-access-setup.md",
+  "docs/operations/diagram-rendering.md",
   "docs/operations/sandbox-safe-verification.md",
   "docs/operations/scoped-verification-gates.md",
   "infra/README.md",
@@ -46,7 +50,7 @@ for (const filePath of requiredFiles) {
   }
 }
 
-for (const directoryPath of ["docs", "infra", "scripts", "scripts/lib", "tools"]) {
+for (const directoryPath of [".vscode", "docs", "infra", "scripts", "scripts/lib", "tools"]) {
   if (!existsSync(join(repoRoot, directoryPath))) {
     failures.push(`${directoryPath}/ is missing`);
   }

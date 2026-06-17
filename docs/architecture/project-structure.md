@@ -12,6 +12,7 @@
 +-- scripts/                Public command-line entrypoints
 |   +-- lib/                Shared shell helpers
 +-- tools/                  Repo-owned verification helpers
++-- .vscode/                Public-safe editor recommendations and PlantUML/YAML settings
 +-- .local/                 Ignored machine-local configuration
 ```
 
