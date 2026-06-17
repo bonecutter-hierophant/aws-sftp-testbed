@@ -4,6 +4,8 @@ Date: 2026-06-16
 
 This repository is public. Treat every committed file as something a future collaborator, search engine, or security reviewer might inspect.
 
+That standard is especially important here because the project documents AWS account bootstrap, IAM boundaries, public networking, and generated SFTP credentials. The repository should teach a careful workflow without publishing private account details or making broad cloud access look routine.
+
 ## Commit Boundary
 
 Do not commit:
@@ -30,6 +32,8 @@ Use `npm run verify:recommend:dirty` only as a human-approved Git checkpoint.
 
 The `public-sanitization` gate scans repo text files for common credential patterns, generated key material, local user paths, and public-repo hygiene risks. It is a backstop, not a substitute for human review.
 
+Sanitization is intentionally conservative. A clean scan means the obvious patterns were not found; it does not mean a public reader could not infer something private from careless prose, copied command output, or overly specific local naming.
+
 ## Human Review
 
 Before publishing, review the diff for:
@@ -41,4 +45,4 @@ Before publishing, review the diff for:
 - comments or docs that reveal internal-only process details
 - generated files that should be ignored instead
 
-When in doubt, keep the first public version boring, accurate, and easy to replace.
+When in doubt, keep the first public version conservative, accurate, and easy to replace.

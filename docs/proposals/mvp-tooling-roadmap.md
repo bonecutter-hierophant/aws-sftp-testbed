@@ -1,0 +1,274 @@
+# MVP Tooling Roadmap
+
+Date: 2026-06-17
+
+Status: approved for initial implementation planning
+
+Source PRD: Disposable AWS SFTP Testbed for SimpleETL
+
+## Summary
+
+`aws-sftp-testbed` should make disposable SFTP setup easy from the command line. The project is tooling for tooling: an operator toolkit that creates a realistic public SFTP endpoint that developers, CI, or coding agents can use while testing features that depend on SFTP connectivity.
+
+The repo should be useful beyond SimpleETL, but the MVP is anchored on SimpleETL's current need for an external SFTP server that can be deployed, used, stopped, destroyed, and rebuilt with minimal manual work.
+
+The proposal intentionally treats safety as part of the user experience. A useful public tool should not only create infrastructure; it should guide users toward scoped access, explicit network boundaries, deterministic checks, and complete teardown. In spirit, this is closer to a cloud installer/uninstaller than a service process: the thing that persists is the documented command surface, not a running application in this repository.
+
+## Locked MVP Assumptions
+
+- Deployment model: CloudFormation plus AWS CLI wrapper scripts.
+- Region default: `us-west-1`.
+- Endpoint type: public EC2 public IPv4/DNS.
+- IP model: dynamic public IP, no Elastic IP by default.
+- SFTP server: Amazon Linux 2023 with OpenSSH `internal-sftp`.
+- Secret behavior: update AWS Secrets Manager after deploy/start.
+- Auth MVP: username and password.
+- Auth bonus: SSH key support.
+- Remote path MVP: `/data`.
+- Lifecycle default: destroy when testing is complete.
+- Network safety: required `AllowedCidr`.
+- Public-open override: explicit temporary flag only.
+- SimpleETL coupling: loose secret schema contract for now.
+
+## Public-Repo Safety Notes
+
+- Do not commit AWS account IDs, ARNs, local profile names, generated credentials, stack output, host keys, smoke-test files, or live Secrets Manager payloads.
+- Keep durable AWS access setup separate from disposable runtime infrastructure.
+- Refuse deploy without `AllowedCidr`.
+- Refuse `0.0.0.0/0` unless an explicit temporary override flag is provided.
+- Never print full passwords or private keys unless an explicit sensitive-output flag is passed.
+- Document costs plainly. The project can be low-cost, but it must not promise to be free.
+
+## Proposal Review Status
+
+- [x] Reviewed against the Google PRD.
+- [x] Public-repo safety model accepted.
+- [x] AWS access and runtime infrastructure boundary accepted.
+- [x] Cost posture accepted.
+- [x] Verification plan accepted.
+- [x] Open decisions accepted as intentionally unresolved.
+- [x] High-privilege AWS account bootstrap scope accepted.
+- [x] Human owner approved this proposal as the active implementation checklist.
+- [x] Approved proposal committed before implementation begins.
+
+Review notes:
+
+- Added durable-secret handling because the PRD says `destroy.sh` should not delete the Secrets Manager secret by default.
+- Added command-output expectations for non-sensitive connection details because the PRD expects `describe.sh` to help the operator find the current host and SFTP username.
+- Added explicit tooling dependencies so the roadmap can produce the command-line experience described by the PRD.
+- Added AWS account bootstrap as an explicit product surface after proposal review. This is intentionally separate from routine testbed operation because it requires management-account or administrator authority. The approved privilege sequence is: use elevated bootstrap access to create the project AWS account, identity, and permission set; then ratchet down to the created project-scoped access for routine EC2/SFTP work.
+
+## Privilege Sequence
+
+1. Use existing admin/management-account AWS CLI access only for bootstrap.
+2. Create or configure the project AWS account.
+3. Create the project-scoped identity and permission set for this testbed.
+4. Verify the project-scoped identity can assume or access only the intended project account.
+5. Switch local routine commands to the project-scoped profile or role.
+6. Use the project-scoped access, not admin access, for CloudFormation, EC2, Secrets Manager, and smoke-test operations.
+7. Keep admin bootstrap access out of normal deploy/start/stop/destroy command paths.
+
+## Dependencies
+
+- AWS CLI v2.
+- Bash-compatible shell for repo scripts.
+- OpenSSH client tools, including `ssh` and `sftp`, for smoke testing.
+- Management-account or administrator AWS CLI access for the bootstrap lane that creates or configures the project AWS account and identity.
+- Project-scoped AWS operator identity with CloudFormation, EC2, IAM pass-role, SSM public parameter, and Secrets Manager permissions for routine testbed operation.
+- Java SDK, Graphviz, and the VS Code PlantUML extension for local diagram rendering.
+
+## MVP Checklist
+
+### 1. Repository Foundation
+
+- [x] Checkout empty public repository.
+- [x] Establish root README and agent workflow.
+- [x] Establish docs, infrastructure, scripts, and tools ownership structure.
+- [x] Add public-repository sanitization gate.
+- [x] Add sandbox-safe verification lane.
+- [x] Add PlantUML diagram workflow matching SimpleETL.
+- [x] Add proposal review process to feature workflow.
+- [x] Commit this proposal only after review approval.
+
+### 2. AWS Account Bootstrap
+
+- [ ] Define a separate high-privilege bootstrap lane for AWS Organizations/account and identity setup.
+- [ ] Document that bootstrap requires management-account or administrator AWS CLI access and human approval.
+- [ ] Add a bootstrap preflight that refuses to run unless the caller explicitly selects the bootstrap lane.
+- [ ] Create or document creation of the project AWS member account from the CLI.
+- [ ] Track asynchronous account creation status before continuing account setup.
+- [ ] Document the automatically created cross-account access role and how bootstrap uses it.
+- [ ] Create or configure the project-scoped operator identity for routine testbed operation.
+- [ ] Create or configure the permission set used by that project-scoped identity.
+- [ ] Attach only the permissions needed to create and manage this project's EC2/SFTP testbed resources inside the project account.
+- [ ] Add a post-bootstrap validation step that proves routine commands are using the project-scoped identity, not the admin bootstrap identity.
+- [ ] Separate bootstrap credentials from routine operator credentials in docs and scripts.
+- [ ] Document local AWS profile setup without committing real profile names.
+- [ ] Store only sanitized bootstrap examples in the repo.
+- [ ] Decide whether account bootstrap scripts live under `scripts/bootstrap/` or a separate top-level `bootstrap/` directory.
+- [ ] Document rollback/cleanup limits for AWS account creation, including operations that cannot be treated as disposable.
+
+### 3. Routine AWS Access Setup
+
+- [ ] Define durable operator identity boundaries for IAM user, role, or IAM Identity Center assignment.
+- [ ] Draft public-safe IAM permission categories for routine operation.
+- [ ] Decide whether to include a sanitized IAM policy template after the CloudFormation shape is known.
+- [ ] Document which routine commands are human-approved AWS actions.
+- [ ] Confirm routine identity cannot perform account bootstrap after setup is complete.
+- [ ] Confirm routine identity is scoped to the project AWS account created during bootstrap.
+
+### 4. CloudFormation Infrastructure
+
+- [ ] Replace scaffold template with real CloudFormation resources.
+- [ ] Use the current Amazon Linux 2023 AMI through SSM public parameters.
+- [ ] Add configurable stack name, project name, region, instance type, and allowed CIDR parameters.
+- [ ] Create security group allowing inbound TCP 22 only from `AllowedCidr`.
+- [ ] Add explicit public-open override path for temporary `0.0.0.0/0` use.
+- [ ] Create EC2 instance with minimal EBS volume.
+- [ ] Add IAM instance profile only if runtime bootstrap needs AWS API access.
+- [ ] Configure tags on every resource.
+- [ ] Output instance ID, public DNS/IP, security group ID, and non-sensitive connection metadata.
+- [ ] Keep Elastic IP, NAT Gateway, load balancer, Transfer Family, and multi-AZ resources out of MVP.
+
+### 5. SFTP Host Bootstrap
+
+- [ ] Configure OpenSSH `internal-sftp`.
+- [ ] Create chroot-safe SFTP directory layout.
+- [ ] Use `/data` as the MVP remote path.
+- [ ] Disable shell access for the SFTP user.
+- [ ] Disable root SSH login.
+- [ ] Disable forwarding and tunneling.
+- [ ] Generate random password credentials.
+- [ ] Add optional SSH public-key auth support if it remains low-risk.
+- [ ] Emit host key fingerprint without exposing private key material.
+- [ ] Ensure no generated credential or key material is written into tracked paths.
+
+### 6. Script Command Surface
+
+- [ ] Keep command behavior installer-like: each command should perform a bounded AWS setup, inspection, test, stop, or teardown task and then exit.
+- [ ] Implement `scripts/deploy.sh`.
+- [ ] Implement `scripts/start.sh`.
+- [ ] Implement `scripts/stop.sh`.
+- [ ] Implement `scripts/destroy.sh`.
+- [ ] Implement `scripts/describe.sh`.
+- [ ] Implement `scripts/update-secret.sh`.
+- [ ] Implement `scripts/smoke-test.sh`.
+- [ ] Add consistent argument parsing in `scripts/lib/`.
+- [ ] Add required command checks for `aws`, `ssh`, `sftp`, and other runtime tools.
+- [ ] Add safe defaults and refusal messages for unsafe inputs.
+- [ ] Redact sensitive values by default.
+- [ ] Add `--show-sensitive` only where genuinely useful and clearly labeled.
+- [ ] Ensure `describe.sh` prints current host, port, username, remote path, host key fingerprint, and stack/resource status without printing secrets.
+- [ ] Add bootstrap command surface only after its safety prompts, docs, and dry-run behavior are approved.
+
+### 7. Secrets Manager Integration
+
+- [ ] Choose an interim secret JSON schema.
+- [ ] Create or update a project-owned Secrets Manager secret.
+- [ ] Write current host/IP after deploy.
+- [ ] Refresh current host/IP after start.
+- [ ] Include `host`, `port`, `username`, `password`, `remotePath`, and host key fingerprint where supported.
+- [ ] Avoid logging full secret payloads.
+- [ ] Document how SimpleETL or another consumer should read the secret.
+- [ ] Keep the project-owned Secrets Manager secret by default when destroying runtime infrastructure.
+- [ ] Add an explicit opt-in path if secret deletion is ever supported.
+- [ ] Keep final schema open until SimpleETL's SFTP implementation settles.
+
+### 8. Source CIDR Discovery
+
+- [ ] Document that CloudFront is not the source of SFTP traffic.
+- [ ] Add guidance for determining the outbound source IP/CIDR for the relevant backend execution path.
+- [ ] Decide whether this repo should provide a helper command for CIDR discovery or only documentation.
+- [ ] Keep Lambda/NAT/EIP assumptions explicit and revisitable.
+
+### 9. Smoke Testing
+
+- [ ] Prove SFTP connection succeeds.
+- [ ] Upload a test file.
+- [ ] List files in `/data`.
+- [ ] Download the test file.
+- [ ] Delete the test file.
+- [ ] Confirm empty-directory behavior.
+- [ ] Exercise bad credentials or unreachable host failure path.
+- [ ] Keep smoke-test artifacts ignored and disposable.
+
+### 10. Lifecycle And Cleanup
+
+- [ ] Make destroy the recommended cleanup path.
+- [ ] Implement stop only for preserving temporary state.
+- [ ] Print the PRD-required stop warning about EBS and remaining resource costs.
+- [ ] Ensure destroy deletes all CloudFormation-managed resources.
+- [ ] Ensure destroy does not delete the durable project-owned Secrets Manager secret by default.
+- [ ] Document how to confirm stack deletion.
+- [ ] Document expected behavior when restarting after dynamic public IP changes.
+
+### 11. Verification And Documentation
+
+- [ ] Add static checks for CloudFormation template shape.
+- [ ] Add dry-run/static verification for bootstrap scripts that does not create AWS accounts.
+- [ ] Add shell-script static checks for required safety guards.
+- [ ] Preserve the stable verification command pattern: public `npm run verify:*` commands should call repo-owned checks with visible gate names.
+- [ ] Add runtime smoke tests only as human-approved commands outside `verify:safe`.
+- [ ] Add docs for every implemented command.
+- [ ] Update architecture diagrams when lifecycle or resource boundaries change.
+- [ ] Keep `README.md` current with implemented command examples.
+- [ ] Run `npm run verify:safe` for routine changes.
+- [ ] Run `npm run verify:scoped structure,public-sanitization,shell-static,docs` before public pushes.
+
+## Open Decisions
+
+- [ ] Whether bootstrap creates a new AWS Organizations member account or only documents that step for the human owner.
+- [ ] Whether routine access should use IAM Identity Center, an IAM role, or an IAM user.
+- [ ] Whether bootstrap scripts belong under `scripts/bootstrap/` or a separate top-level `bootstrap/` directory.
+- [ ] Final Secrets Manager JSON schema.
+- [ ] Whether consumers call this a Secret Keeper integration or a direct AWS Secrets Manager integration.
+- [ ] Whether host key validation is required in MVP.
+- [ ] Whether there is one `remotePath` or separate source/destination paths.
+- [ ] Whether consuming systems delete remote files after ingestion.
+- [ ] Whether consuming systems move processed files to archive.
+- [ ] Whether password-only, key-only, or both are needed beyond MVP.
+- [ ] Whether backend egress is stable through NAT/EIP or discovered dynamically per run.
+
+## Explicit Non-Goals
+
+- No UI.
+- No managed AWS Transfer Family server.
+- No production-grade SFTP service.
+- No high availability.
+- No multi-AZ redundancy.
+- No long-term file retention.
+- No vendor-specific SFTP quirks in MVP.
+- No permanent public endpoint.
+- No dependency on SimpleETL internals beyond the secret schema and expected directory behavior.
+
+## Future Enhancements
+
+- [ ] Scheduled start/test/stop workflow.
+- [ ] GitHub Actions workflow.
+- [ ] EventBridge-based auto-shutdown.
+- [ ] Multiple test users.
+- [ ] Read-only user.
+- [ ] Upload-only user.
+- [ ] Permission-denied fixtures.
+- [ ] Large-file fixture.
+- [ ] Many-small-files fixture.
+- [ ] Host key rotation test.
+- [ ] Credential rotation test.
+- [ ] S3-backed fixture file seeding.
+- [ ] Private VPC-only mode.
+- [ ] Terraform alternative.
+- [ ] CDK alternative.
+
+## Closeout Criteria
+
+The MVP is complete when:
+
+- [ ] High-privilege bootstrap docs/scripts can guide creation of the project account and operator identity from the CLI with explicit human approval gates.
+- [ ] The testbed can be deployed from the command line.
+- [ ] The security group allows only the intended SFTP source CIDR unless explicit temporary public-open override is used.
+- [ ] Secrets Manager contains current host/IP and credentials after deploy/start.
+- [ ] A smoke test proves connect, upload, list, download, delete, and empty-directory behavior.
+- [ ] Destroy tears down all runtime resources.
+- [ ] Destroy preserves the durable project-owned secret unless an explicit future opt-in deletion path is approved.
+- [ ] Documentation describes setup, use, cost posture, safety defaults, and cleanup.
+- [ ] Public sanitization and sandbox-safe verification pass.

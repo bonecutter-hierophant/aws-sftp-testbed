@@ -25,6 +25,7 @@ const requiredFiles = [
   "docs/operations/diagram-rendering.md",
   "docs/operations/sandbox-safe-verification.md",
   "docs/operations/scoped-verification-gates.md",
+  "docs/proposals/mvp-tooling-roadmap.md",
   "infra/README.md",
   "infra/cloudformation/README.md",
   "infra/cloudformation/template.yaml",
@@ -50,7 +51,7 @@ for (const filePath of requiredFiles) {
   }
 }
 
-for (const directoryPath of [".vscode", "docs", "infra", "scripts", "scripts/lib", "tools"]) {
+for (const directoryPath of [".vscode", "docs", "docs/proposals", "infra", "scripts", "scripts/lib", "tools"]) {
   if (!existsSync(join(repoRoot, directoryPath))) {
     failures.push(`${directoryPath}/ is missing`);
   }

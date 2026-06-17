@@ -6,6 +6,8 @@ This repository creates disposable AWS infrastructure for SFTP integration testi
 
 Project AWS access can be durable; runtime infrastructure should be disposable. Use `docs/operations/aws-access-setup.md` for IAM user, role, policy, and local profile boundaries.
 
+The repository itself is not intended to run a persistent service. It owns command-line tooling that installs, inspects, tests, stops, and uninstalls AWS-hosted SFTP infrastructure.
+
 ## MVP Boundary
 
 Use:

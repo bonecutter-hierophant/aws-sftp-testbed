@@ -11,6 +11,7 @@ Before changing code:
 - Read `docs/operations/diagram-rendering.md` before adding or changing PlantUML diagram workflow.
 - Read `docs/operations/sandbox-safe-verification.md` before adding or changing verification tooling.
 - Use `docs/operations/feature-development-workflow.md` for non-trivial feature work.
+- Keep proposals in `docs/proposals/` uncommitted or marked proposed until they are reviewed and approved as active implementation plans.
 - Read the relevant local `README.md` beside scripts, infrastructure templates, or docs being changed.
 - Keep public-repository hygiene in mind: do not commit secrets, private keys, private AWS account details, generated AWS outputs, live credentials, or machine-local private context.
 

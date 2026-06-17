@@ -27,6 +27,7 @@ Create a proposal in `docs/proposals/` before implementation when work changes:
 - AWS resource shape
 - IAM permissions
 - project-scoped AWS access setup
+- high-privilege AWS account bootstrap setup
 - public network exposure
 - secret schema
 - credential-generation behavior
@@ -35,6 +36,25 @@ Create a proposal in `docs/proposals/` before implementation when work changes:
 - diagram rendering workflow
 
 The proposal should include scope, public-repo safety notes, dependencies, implementation steps, verification gates, out-of-scope items, and a closeout checklist.
+
+## Proposal Review
+
+Proposal review is a required workflow step before committing a proposal as the active implementation plan.
+
+The reviewer may be the human/Codex pair or a reviewer agent, but the human owner keeps product, security, AWS account-boundary, provider, cost, and final merge authority.
+
+Before committing a proposal:
+
+- Compare it against the source PRD or feature request.
+- Check public-repo safety, secret handling, AWS account boundaries, cost posture, cleanup behavior, and verification plan.
+- Treat AWS account creation, IAM Identity Center, IAM users, IAM roles, permission sets, billing access, and organization changes as high-risk bootstrap scope that needs explicit human approval.
+- Confirm the proposal names open decisions instead of silently settling them.
+- Confirm implementation is not allowed to begin until the proposal is approved and committed.
+- Record review status in the proposal itself.
+
+If review changes the scope, safety model, AWS resource shape, IAM boundary, secret schema, lifecycle behavior, or verification plan, update the proposal and get another review pass before implementation begins.
+
+For meaningful features, commit the approved proposal before implementation. The proposal should stay in `docs/proposals/` until implementation review signs off and durable local docs describe the final behavior.
 
 ## Implementation Rules
 
@@ -46,6 +66,7 @@ The proposal should include scope, public-repo safety notes, dependencies, imple
 - Avoid unrelated refactors and formatting churn.
 - Do not add secrets, private AWS account identifiers, tokens, credentials, generated keys, or live AWS CLI output to source control.
 - Run the public sanitization gate before committing public-facing work.
+- Do not implement meaningful proposal-scoped work until the proposal is reviewed, approved, and committed.
 
 ## Closeout
 
