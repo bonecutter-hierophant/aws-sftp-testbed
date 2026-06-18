@@ -10,6 +10,8 @@ region="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-1}}"
 stack_name="aws-sftp-server"
 project_name="aws-sftp-server"
 instance_type="t3.micro"
+vpc_id=""
+subnet_id=""
 sftp_username="sftpuser"
 allowed_cidr=""
 allow_public_cidr="false"
@@ -37,6 +39,9 @@ Options:
   --stack-name <name>          CloudFormation stack name. Defaults to aws-sftp-server.
   --project-name <name>        Project tag and resource prefix. Defaults to aws-sftp-server.
   --instance-type <type>       EC2 instance type. Defaults to t3.micro.
+  --vpc-id <vpc-id>            VPC for the testbed. Defaults to the account default VPC.
+  --subnet-id <subnet-id>      Public subnet for the instance. Defaults to a default subnet
+                               in the selected VPC.
   --sftp-username <name>       SFTP username. Defaults to sftpuser.
   --parameter-name <name>      SSM Parameter Store name. Defaults to
                                /aws-sftp-server/connection.
@@ -83,6 +88,16 @@ while [[ $# -gt 0 ]]; do
     --instance-type)
       [[ $# -ge 2 ]] || fail "--instance-type requires a value."
       instance_type="$2"
+      shift 2
+      ;;
+    --vpc-id)
+      [[ $# -ge 2 ]] || fail "--vpc-id requires a value."
+      vpc_id="$2"
+      shift 2
+      ;;
+    --subnet-id)
+      [[ $# -ge 2 ]] || fail "--subnet-id requires a value."
+      subnet_id="$2"
       shift 2
       ;;
     --sftp-username)
@@ -136,6 +151,28 @@ validate_bootstrap_name "$stack_name" "stack name"
 validate_bootstrap_name "$project_name" "project name"
 validate_sftp_username "$sftp_username"
 
+if [[ -z "$vpc_id" ]]; then
+  vpc_id="$(aws ec2 describe-vpcs \
+    --profile "$profile" \
+    --region "$region" \
+    --filters Name=is-default,Values=true \
+    --query 'Vpcs[0].VpcId' \
+    --output text)"
+
+  [[ -n "$vpc_id" && "$vpc_id" != "None" ]] || fail "No default VPC found. Re-run with --vpc-id and --subnet-id for a public subnet."
+fi
+
+if [[ -z "$subnet_id" ]]; then
+  subnet_id="$(aws ec2 describe-subnets \
+    --profile "$profile" \
+    --region "$region" \
+    --filters Name=vpc-id,Values="$vpc_id" Name=default-for-az,Values=true \
+    --query 'sort_by(Subnets,&AvailabilityZone)[0].SubnetId' \
+    --output text)"
+
+  [[ -n "$subnet_id" && "$subnet_id" != "None" ]] || fail "No default subnet found in $vpc_id. Re-run with --subnet-id for a public subnet."
+fi
+
 repo_root_path="$(repo_root)"
 credentials_dir="$repo_root_path/.local"
 credentials_file="$credentials_dir/${stack_name}-credentials.env"
@@ -162,6 +199,8 @@ printf '  Stack name: %s\n' "$stack_name"
 printf '  Project name: %s\n' "$project_name"
 printf '  Region: %s\n' "$region"
 printf '  Instance type: %s\n' "$instance_type"
+printf '  VPC ID: %s\n' "$vpc_id"
+printf '  Subnet ID: %s\n' "$subnet_id"
 printf '  Allowed CIDR: %s\n' "$allowed_cidr"
 printf '  Public CIDR override: %s\n' "$allow_public_cidr"
 printf '  SFTP username: %s\n' "$sftp_username"
@@ -186,6 +225,8 @@ aws cloudformation deploy \
     "AllowedCidr=$allowed_cidr" \
     "AllowPublicCidr=$allow_public_cidr" \
     "InstanceType=$instance_type" \
+    "VpcId=$vpc_id" \
+    "SubnetId=$subnet_id" \
     "ProjectName=$project_name" \
     "SftpUsername=$sftp_username" \
     "SftpPassword=$sftp_password" \

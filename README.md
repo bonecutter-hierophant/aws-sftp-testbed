@@ -108,6 +108,8 @@ npm run deploy -- 0.0.0.0/0 allow-public-cidr
 
 Deploy generates disposable SFTP credentials into `.local/<stack-name>-credentials.env`, which is ignored by Git. Do not commit generated credentials or stack outputs.
 
+By default, deploy discovers the account default VPC and a default subnet, then launches the instance with an explicit public IPv4 association. Accounts without a default VPC or default subnet can pass `--vpc-id` and `--subnet-id`; the subnet must be publicly routable for external clients such as FileZilla.
+
 Common lifecycle commands:
 
 ```text
@@ -138,6 +140,8 @@ Interim connection parameter schema:
 ```text
 host, publicIp, port, username, password, remotePath, hostKeyFingerprints, projectName
 ```
+
+For a desktop SFTP client such as FileZilla, use `host` or `publicIp`, `port` value `22`, `username`, and `password` from the Parameter Store value. The remote path is `/data`.
 
 The MVP uses SSM Parameter Store `SecureString` for this published connection payload. This schema is interim until the consuming SFTP implementation settles. Secrets Manager is left as a future option for managed rotation workflows, but disposable testbed credential rotation should normally happen through redeploying the runtime stack.
 

@@ -18,6 +18,12 @@ Parameters:
     Default: t3.micro
     Description: EC2 instance type for the disposable SFTP server.
     AllowedPattern: "^[a-z0-9]+\\.[a-z0-9]+$"
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC where the public SFTP testbed security group is created.
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet where the SFTP instance is launched.
   LatestAmiId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
@@ -58,6 +64,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: !Sub "${ProjectName} disposable SFTP ingress"
+      VpcId: !Ref VpcId
       SecurityGroupIngress:
         - Description: Explicit SFTP source CIDR
           IpProtocol: tcp
@@ -81,8 +88,12 @@ Resources:
     Properties:
       ImageId: !Ref LatestAmiId
       InstanceType: !Ref InstanceType
-      SecurityGroupIds:
-        - !GetAtt SftpSecurityGroup.GroupId
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref SftpSecurityGroup
+          SubnetId: !Ref SubnetId
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
@@ -160,6 +171,12 @@ Outputs:
   SecurityGroupId:
     Description: Security group controlling SFTP ingress.
     Value: !GetAtt SftpSecurityGroup.GroupId
+  VpcId:
+    Description: VPC containing the SFTP instance.
+    Value: !Ref VpcId
+  SubnetId:
+    Description: Public subnet containing the SFTP instance.
+    Value: !Ref SubnetId
   SftpPort:
     Description: SFTP port.
     Value: 22

@@ -22,7 +22,7 @@ Implemented routine commands:
 
 - `login.sh`: runs `aws sso login` for the routine operator profile, verifies the profile is configured for the expected project permission set, and prints the resulting caller identity for review. It defaults to `aws-sftp-server-operator` or `AWS_SFTP_SERVER_PROFILE`. Local account IDs must not be committed.
 - `validate-routine-access.sh`: confirms caller identity for the routine profile and verifies AWS Organizations bootstrap access is denied.
-- `deploy.sh`: validates CIDR safety inputs, generates disposable local SFTP credentials, deploys the CloudFormation stack, refreshes the SSM Parameter Store connection parameter, and prints non-sensitive stack outputs. Generated credentials are written under `.local/`.
+- `deploy.sh`: validates CIDR safety inputs, discovers or accepts the target VPC/subnet, generates disposable local SFTP credentials, deploys the CloudFormation stack, refreshes the SSM Parameter Store connection parameter, and prints non-sensitive stack outputs. Generated credentials are written under `.local/`.
 - `describe.sh`: prints non-sensitive stack, endpoint, and SFTP metadata and attempts host key fingerprint discovery without printing credentials.
 - `start.sh`: starts an existing stopped EC2 instance, refreshes the SSM Parameter Store connection parameter, and warns that public endpoint values may change.
 - `stop.sh`: stops EC2 compute while warning that attached storage and other resources may still incur charges.

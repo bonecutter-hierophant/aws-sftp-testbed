@@ -16,7 +16,8 @@ Do not commit generated stack outputs or live AWS identifiers.
 Current MVP shape:
 
 - uses the public Amazon Linux 2023 SSM AMI parameter
-- creates a public EC2 instance in the default VPC
+- creates a public EC2 instance in the selected VPC and subnet
+- explicitly associates a public IPv4 address with the instance network interface
 - allows inbound TCP 22 only from `AllowedCidr`
 - requires `AllowPublicCidr=true` when `AllowedCidr` is `0.0.0.0/0`
 - accepts configurable project name, instance type, SFTP username, and deploy-supplied password parameters
@@ -29,4 +30,4 @@ Current MVP shape:
 - defers SSH public-key authentication until key material handling is reviewed separately
 - avoids Elastic IP, NAT Gateway, load balancer, AWS Transfer Family, and multi-AZ resources
 - avoids an EC2 instance profile because user-data bootstrap does not call AWS APIs
-- outputs instance ID, public DNS, public IP, security group ID, port, username, remote path, and project name
+- outputs instance ID, public DNS, public IP, VPC ID, subnet ID, security group ID, port, username, remote path, and project name

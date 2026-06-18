@@ -139,6 +139,7 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 - [x] Replace scaffold template with real CloudFormation resources.
 - [x] Use the current Amazon Linux 2023 AMI through SSM public parameters.
 - [x] Add configurable stack name, project name, region, instance type, and allowed CIDR parameters.
+- [x] Make VPC/subnet selection explicit and associate a public IPv4 address.
 - [x] Create security group allowing inbound TCP 22 only from `AllowedCidr`.
 - [x] Add explicit public-open override path for temporary `0.0.0.0/0` use.
 - [x] Create EC2 instance with minimal EBS volume.
