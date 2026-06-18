@@ -159,6 +159,79 @@ The routine validation command is `scripts/validate-routine-access.sh`. It confi
 
 The local profile setup command is `scripts/bootstrap/configure-routine-profile.sh`. It writes the routine AWS CLI profile using the project account discovered from AWS Organizations, the project permission set name, and an existing local AWS CLI SSO session. When a bootstrap profile is not provided, it discovers a signed-in local profile with AWS Organizations access. It writes only local AWS configuration and refuses to run unless the caller passes both `--bootstrap` and `--approve-local-profile`.
 
+## Permission Guidance
+
+The bootstrap workflow creates the `AwsSftpServer-Operator` permission set with the permission categories needed for routine operation. Public documentation should describe those categories so another operator can reproduce the access model safely.
+
+Routine operator permissions should include only:
+
+- CloudFormation actions needed to create, update, inspect, and delete this project's stack
+- EC2 actions needed to create, tag, inspect, start, stop, and terminate this project's runtime resources
+- security group actions needed for the explicit SFTP ingress boundary
+- IAM instance profile and pass-role actions only for project-prefixed roles and instance profiles required by the runtime stack
+- Secrets Manager actions needed to create, read, and update the project-owned secret
+- SSM public parameter reads for the Amazon Linux 2023 AMI
+- caller identity and account metadata reads needed for validation and diagnostics
+
+Routine operator permissions should not include:
+
+- AWS Organizations account creation or management
+- IAM Identity Center administration
+- broad administrator access
+- access to unrelated project accounts
+- permission to close AWS accounts
+- permission to delete durable project secrets as part of normal runtime teardown
+
+A committed sanitized IAM policy template should be added only after the CloudFormation template and runtime resource names are implemented. Until then, keep the public documentation at the permission-category level and keep any live policy output out of source control.
+
+## Setup Guide
+
+This is the public-safe shape for setting up the access model from a management account.
+
+Before starting:
+
+- Sign in locally with management-account access that can use AWS Organizations and IAM Identity Center.
+- Confirm IAM Identity Center is enabled for the organization.
+- Confirm the intended operator user exists in IAM Identity Center.
+- Choose an email address for the new AWS account. AWS requires a unique email address for each account. A forwarding address or alias that reaches the responsible owner is acceptable if it can receive AWS account mail.
+- Keep the real account email, account IDs, IAM Identity Center identifiers, local profile names, and command output out of source control.
+
+Target structure:
+
+```text
+AWS Organizations
++-- Management account
+    +-- uses management/admin access for bootstrap only
++-- aws-sftp-server account
+    +-- IAM Identity Center permission set: AwsSftpServer-Operator
+    +-- IAM Identity Center account assignment: operator user -> AwsSftpServer-Operator
+    +-- local routine AWS CLI profile: aws-sftp-server-operator
+```
+
+Setup steps:
+
+1. Inspect the management account, organization accounts, and IAM Identity Center instance.
+1. Create the dedicated `aws-sftp-server` AWS Organizations member account.
+1. Create or update the `AwsSftpServer-Operator` IAM Identity Center permission set.
+1. Assign `AwsSftpServer-Operator` to the operator user for the `aws-sftp-server` account.
+1. Configure the local routine AWS CLI profile.
+1. Sign in through IAM Identity Center using the routine profile.
+1. Validate that the routine profile is scoped to the project account and cannot use AWS Organizations bootstrap APIs.
+
+Command sequence:
+
+```text
+npm run bootstrap:inspect -- --bootstrap --profile <local-admin-profile>
+npm run bootstrap:create-account -- --bootstrap --approve-create-account --profile <local-admin-profile> --account-email <account-email>
+npm run bootstrap:ensure-permission-set -- --bootstrap --approve-permission-set --profile <local-admin-profile>
+npm run bootstrap:assign-permission-set -- --bootstrap --approve-assignment --profile <local-admin-profile> --operator-username <operator-username>
+npm run bootstrap:configure-profile
+npm run login
+npm run validate:routine-access
+```
+
+After setup, routine SFTP testbed commands should use the routine profile path, not the management-account bootstrap path.
+
 Preferred invocation:
 
 ```text

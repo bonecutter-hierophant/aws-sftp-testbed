@@ -125,10 +125,12 @@ Bootstrap decisions baked into implementation:
 
 - [x] Define durable operator identity boundaries for IAM user, role, or IAM Identity Center assignment.
 - [x] Draft public-safe IAM permission categories for routine operation.
-- [ ] Decide whether to include a sanitized IAM policy template after the CloudFormation shape is known.
-- [ ] Document which routine commands are human-approved AWS actions.
+- [x] Decide whether to include a sanitized IAM policy template after the CloudFormation shape is known.
+- [x] Document which routine commands are human-approved AWS actions.
 - [x] Confirm routine identity cannot perform account bootstrap after setup is complete.
 - [x] Confirm routine identity is scoped to the project AWS account created during bootstrap.
+
+Follow-up requirement: when the CloudFormation template and runtime resource names are implemented, update `docs/operations/aws-access-setup.md` with the final permission set shape and add a sanitized IAM policy template or explain why category-level guidance remains the safer public form.
 
 ### 4. CloudFormation Infrastructure
 

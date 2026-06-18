@@ -11,6 +11,7 @@ The public shape matters because this kind of tool sits at an unusual boundary. 
 - [x] Empty public repository checked out
 - [x] Initial documentation and ownership structure established
 - [x] Public-repository sanitization and static verification scaffolded
+- [x] AWS account bootstrap workflow implemented and documented
 - [ ] CloudFormation template implemented
 - [ ] Deploy/start/stop/destroy scripts implemented
 - [ ] Secrets Manager update flow implemented
