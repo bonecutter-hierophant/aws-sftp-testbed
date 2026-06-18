@@ -61,12 +61,16 @@ Review notes:
 ## Privilege Sequence
 
 1. Use existing admin/management-account AWS CLI access only for bootstrap.
-2. Create or configure the project AWS account.
-3. Create the project-scoped identity and permission set for this testbed.
+2. Create a dedicated AWS Organizations member account for this project, documented with a public-safe name such as `aws-sftp-server`.
+3. Create the project-scoped IAM Identity Center permission set for this SFTP server account, documented with a public-safe name such as `AwsSftpServer-Operator`.
 4. Verify the project-scoped identity can assume or access only the intended project account.
 5. Switch local routine commands to the project-scoped profile or role.
 6. Use the project-scoped access, not admin access, for CloudFormation, EC2, Secrets Manager, and smoke-test operations.
 7. Keep admin bootstrap access out of normal deploy/start/stop/destroy command paths.
+
+The dedicated account is part of the safety model. The SFTP server should look and behave like an external server owned outside the consuming application account, keep billing separate, and keep EC2 create/destroy permissions out of unrelated project accounts.
+
+Bootstrap approvals happen at phase boundaries. A human should approve inspect, then review the report, then approve a bounded create or assignment phase that may run several AWS API calls as one clear operation.
 
 ## Dependencies
 
@@ -92,30 +96,39 @@ Review notes:
 
 ### 2. AWS Account Bootstrap
 
-- [ ] Define a separate high-privilege bootstrap lane for AWS Organizations/account and identity setup.
-- [ ] Document that bootstrap requires management-account or administrator AWS CLI access and human approval.
-- [ ] Add a bootstrap preflight that refuses to run unless the caller explicitly selects the bootstrap lane.
-- [ ] Create or document creation of the project AWS member account from the CLI.
-- [ ] Track asynchronous account creation status before continuing account setup.
-- [ ] Document the automatically created cross-account access role and how bootstrap uses it.
-- [ ] Create or configure the project-scoped operator identity for routine testbed operation.
-- [ ] Create or configure the permission set used by that project-scoped identity.
-- [ ] Attach only the permissions needed to create and manage this project's EC2/SFTP testbed resources inside the project account.
-- [ ] Add a post-bootstrap validation step that proves routine commands are using the project-scoped identity, not the admin bootstrap identity.
-- [ ] Separate bootstrap credentials from routine operator credentials in docs and scripts.
-- [ ] Document local AWS profile setup without committing real profile names.
-- [ ] Store only sanitized bootstrap examples in the repo.
-- [ ] Decide whether account bootstrap scripts live under `scripts/bootstrap/` or a separate top-level `bootstrap/` directory.
-- [ ] Document rollback/cleanup limits for AWS account creation, including operations that cannot be treated as disposable.
+- [x] Define a separate high-privilege bootstrap lane for AWS Organizations/account and identity setup.
+- [x] Document that bootstrap requires management-account or administrator AWS CLI access and human approval.
+- [x] Add a bootstrap preflight that refuses to run unless the caller explicitly selects the bootstrap lane.
+- [x] Create or document creation of the project AWS member account from the CLI.
+- [x] Track asynchronous account creation status before continuing account setup.
+- [x] Document the automatically created cross-account access role and how bootstrap uses it.
+- [x] Create or configure the project-scoped operator identity for routine testbed operation.
+- [x] Create or configure the permission set used by that project-scoped identity.
+- [x] Attach only the permissions needed to create and manage this project's EC2/SFTP testbed resources inside the project account.
+- [x] Add a post-bootstrap validation step that proves routine commands are using the project-scoped identity, not the admin bootstrap identity.
+- [x] Separate bootstrap credentials from routine operator credentials in docs and scripts.
+- [x] Document local AWS profile setup without committing real profile names.
+- [x] Store only sanitized bootstrap examples in the repo.
+- [x] Decide whether account bootstrap scripts live under `scripts/bootstrap/` or a separate top-level `bootstrap/` directory.
+- [x] Document rollback/cleanup limits for AWS account creation, including operations that cannot be treated as disposable.
+
+Bootstrap decisions baked into implementation:
+
+- Create a new AWS Organizations member account rather than attaching runtime permissions to an existing development account.
+- Use `aws-sftp-server` as the public-safe account name in docs and examples.
+- Use IAM Identity Center for routine operator access.
+- Use `AwsSftpServer-Operator` as the public-safe permission set name in docs and examples.
+- Do not add a read-only role for MVP unless a reviewed follow-up needs it.
+- Use phase-level approval gates: inspect, report, then approve a bounded create or assignment phase.
 
 ### 3. Routine AWS Access Setup
 
-- [ ] Define durable operator identity boundaries for IAM user, role, or IAM Identity Center assignment.
-- [ ] Draft public-safe IAM permission categories for routine operation.
+- [x] Define durable operator identity boundaries for IAM user, role, or IAM Identity Center assignment.
+- [x] Draft public-safe IAM permission categories for routine operation.
 - [ ] Decide whether to include a sanitized IAM policy template after the CloudFormation shape is known.
 - [ ] Document which routine commands are human-approved AWS actions.
-- [ ] Confirm routine identity cannot perform account bootstrap after setup is complete.
-- [ ] Confirm routine identity is scoped to the project AWS account created during bootstrap.
+- [x] Confirm routine identity cannot perform account bootstrap after setup is complete.
+- [x] Confirm routine identity is scoped to the project AWS account created during bootstrap.
 
 ### 4. CloudFormation Infrastructure
 

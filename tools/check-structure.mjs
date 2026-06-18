@@ -30,8 +30,16 @@ const requiredFiles = [
   "infra/cloudformation/README.md",
   "infra/cloudformation/template.yaml",
   "scripts/README.md",
+  "scripts/bootstrap/README.md",
+  "scripts/bootstrap/assign-permission-set.sh",
+  "scripts/bootstrap/configure-routine-profile.sh",
+  "scripts/bootstrap/create-account.sh",
+  "scripts/bootstrap/ensure-permission-set.sh",
+  "scripts/bootstrap/inspect.sh",
   "scripts/lib/README.md",
   "scripts/lib/common.sh",
+  "scripts/login.sh",
+  "scripts/validate-routine-access.sh",
   "scripts/deploy.sh",
   "scripts/start.sh",
   "scripts/stop.sh",
@@ -51,7 +59,7 @@ for (const filePath of requiredFiles) {
   }
 }
 
-for (const directoryPath of [".vscode", "docs", "docs/proposals", "infra", "scripts", "scripts/lib", "tools"]) {
+for (const directoryPath of [".vscode", "docs", "docs/proposals", "infra", "scripts", "scripts/bootstrap", "scripts/lib", "tools"]) {
   if (!existsSync(join(repoRoot, directoryPath))) {
     failures.push(`${directoryPath}/ is missing`);
   }

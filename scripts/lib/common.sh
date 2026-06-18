@@ -16,6 +16,26 @@ require_command() {
   command -v "$command_name" >/dev/null 2>&1 || fail "Required command not found: $command_name"
 }
 
+require_bootstrap_selected() {
+  local selected="${1:-false}"
+
+  [[ "$selected" == "true" ]] || fail "Refusing bootstrap command without --bootstrap. This lane uses management-account visibility."
+}
+
+validate_bootstrap_name() {
+  local value="$1"
+  local label="$2"
+
+  [[ "$value" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]{1,63}$ ]] || fail "Invalid $label: use 2-64 letters, numbers, dots, underscores, or hyphens."
+}
+
+validate_positive_integer() {
+  local value="$1"
+  local label="$2"
+
+  [[ "$value" =~ ^[1-9][0-9]*$ ]] || fail "Invalid $label: expected a positive integer."
+}
+
 require_allowed_cidr() {
   local allowed_cidr="${1:-}"
   local allow_public="${2:-false}"
