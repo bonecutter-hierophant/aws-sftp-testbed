@@ -23,7 +23,7 @@
     "bootstrap:configure-profile": "node tools/run-bash-script.mjs scripts/bootstrap/configure-routine-profile.sh --bootstrap --approve-local-profile",
     "start": "node tools/run-bash-script.mjs scripts/start.sh",
     "stop": "node tools/run-bash-script.mjs scripts/stop.sh",
-    "destroy": "node tools/run-bash-script.mjs scripts/destroy.sh",
+    "destroy": "node tools/run-bash-script.mjs scripts/destroy.sh --approve-destroy",
     "describe": "node tools/run-bash-script.mjs scripts/describe.sh",
     "smoke:test": "node tools/run-bash-script.mjs scripts/smoke-test.sh"
   },

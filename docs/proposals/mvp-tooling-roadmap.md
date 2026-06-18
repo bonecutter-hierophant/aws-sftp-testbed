@@ -160,19 +160,19 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 
 ### 6. Script Command Surface
 
-- [ ] Keep command behavior installer-like: each command should perform a bounded AWS setup, inspection, test, stop, or teardown task and then exit.
+- [x] Keep command behavior installer-like: each command should perform a bounded AWS setup, inspection, test, stop, or teardown task and then exit.
 - [x] Implement `scripts/deploy.sh`.
-- [ ] Implement `scripts/start.sh`.
-- [ ] Implement `scripts/stop.sh`.
-- [ ] Implement `scripts/destroy.sh`.
-- [ ] Implement `scripts/describe.sh`.
+- [x] Implement `scripts/start.sh`.
+- [x] Implement `scripts/stop.sh`.
+- [x] Implement `scripts/destroy.sh`.
+- [x] Implement `scripts/describe.sh`.
 - [ ] Implement `scripts/update-secret.sh`.
 - [ ] Implement `scripts/smoke-test.sh`.
 - [ ] Add consistent argument parsing in `scripts/lib/`.
 - [ ] Add required command checks for `aws`, `ssh`, `sftp`, and other runtime tools.
-- [ ] Add safe defaults and refusal messages for unsafe inputs.
-- [ ] Redact sensitive values by default.
-- [ ] Add `--show-sensitive` only where genuinely useful and clearly labeled.
+- [x] Add safe defaults and refusal messages for unsafe inputs.
+- [x] Redact sensitive values by default.
+- [x] Add `--show-sensitive` only where genuinely useful and clearly labeled.
 - [x] Ensure `describe.sh` prints current host, port, username, remote path, host key fingerprint, and stack/resource status without printing secrets.
 - [ ] Add bootstrap command surface only after its safety prompts, docs, and dry-run behavior are approved.
 
@@ -209,13 +209,13 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 
 ### 10. Lifecycle And Cleanup
 
-- [ ] Make destroy the recommended cleanup path.
-- [ ] Implement stop only for preserving temporary state.
-- [ ] Print the PRD-required stop warning about EBS and remaining resource costs.
-- [ ] Ensure destroy deletes all CloudFormation-managed resources.
-- [ ] Ensure destroy does not delete the durable project-owned Secrets Manager secret by default.
-- [ ] Document how to confirm stack deletion.
-- [ ] Document expected behavior when restarting after dynamic public IP changes.
+- [x] Make destroy the recommended cleanup path.
+- [x] Implement stop only for preserving temporary state.
+- [x] Print the PRD-required stop warning about EBS and remaining resource costs.
+- [x] Ensure destroy deletes all CloudFormation-managed resources.
+- [x] Ensure destroy does not delete the durable project-owned Secrets Manager secret by default.
+- [x] Document how to confirm stack deletion.
+- [x] Document expected behavior when restarting after dynamic public IP changes.
 
 ### 11. Verification And Documentation
 

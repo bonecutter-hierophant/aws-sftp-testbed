@@ -30,17 +30,6 @@ This command does not print SFTP passwords or private key material.
 USAGE
 }
 
-stack_output() {
-  local key="$1"
-
-  aws cloudformation describe-stacks \
-    --profile "$profile" \
-    --region "$region" \
-    --stack-name "$stack_name" \
-    --query "Stacks[0].Outputs[?OutputKey=='$key'].OutputValue | [0]" \
-    --output text
-}
-
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --profile)
@@ -81,24 +70,19 @@ printf 'This command prints non-sensitive stack and endpoint details.\n'
 printf 'Do not commit stack outputs, account IDs, profile names, or generated credentials.\n'
 printf '\n'
 
-stack_status="$(aws cloudformation describe-stacks \
-  --profile "$profile" \
-  --region "$region" \
-  --stack-name "$stack_name" \
-  --query 'Stacks[0].StackStatus' \
-  --output text)"
+stack_status_value="$(stack_status "$profile" "$region" "$stack_name")"
 
-instance_id="$(stack_output InstanceId)"
-public_dns="$(stack_output PublicDnsName)"
-public_ip="$(stack_output PublicIp)"
-security_group_id="$(stack_output SecurityGroupId)"
-sftp_port="$(stack_output SftpPort)"
-sftp_username="$(stack_output SftpUsername)"
-remote_path="$(stack_output RemotePath)"
-project_name="$(stack_output ProjectName)"
+instance_id="$(stack_output "$profile" "$region" "$stack_name" InstanceId)"
+public_dns="$(stack_output "$profile" "$region" "$stack_name" PublicDnsName)"
+public_ip="$(stack_output "$profile" "$region" "$stack_name" PublicIp)"
+security_group_id="$(stack_output "$profile" "$region" "$stack_name" SecurityGroupId)"
+sftp_port="$(stack_output "$profile" "$region" "$stack_name" SftpPort)"
+sftp_username="$(stack_output "$profile" "$region" "$stack_name" SftpUsername)"
+remote_path="$(stack_output "$profile" "$region" "$stack_name" RemotePath)"
+project_name="$(stack_output "$profile" "$region" "$stack_name" ProjectName)"
 
 printf 'Stack name: %s\n' "$stack_name"
-printf 'Stack status: %s\n' "$stack_status"
+printf 'Stack status: %s\n' "$stack_status_value"
 printf 'Project name: %s\n' "$project_name"
 printf 'Instance ID: %s\n' "$instance_id"
 printf 'Security group ID: %s\n' "$security_group_id"

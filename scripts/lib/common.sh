@@ -42,6 +42,41 @@ validate_sftp_username() {
   [[ "$value" =~ ^[a-z_][a-z0-9_-]{1,31}$ ]] || fail "Invalid SFTP username: use 2-32 lowercase letters, numbers, underscores, or hyphens, starting with a letter or underscore."
 }
 
+stack_output() {
+  local profile="$1"
+  local region="$2"
+  local stack_name="$3"
+  local key="$4"
+
+  aws cloudformation describe-stacks \
+    --profile "$profile" \
+    --region "$region" \
+    --stack-name "$stack_name" \
+    --query "Stacks[0].Outputs[?OutputKey=='$key'].OutputValue | [0]" \
+    --output text
+}
+
+stack_status() {
+  local profile="$1"
+  local region="$2"
+  local stack_name="$3"
+
+  aws cloudformation describe-stacks \
+    --profile "$profile" \
+    --region "$region" \
+    --stack-name "$stack_name" \
+    --query 'Stacks[0].StackStatus' \
+    --output text
+}
+
+stack_instance_id() {
+  local profile="$1"
+  local region="$2"
+  local stack_name="$3"
+
+  stack_output "$profile" "$region" "$stack_name" "InstanceId"
+}
+
 require_allowed_cidr() {
   local allowed_cidr="${1:-}"
   local allow_public="${2:-false}"

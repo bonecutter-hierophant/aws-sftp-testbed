@@ -107,6 +107,17 @@ npm run deploy -- 0.0.0.0/0 allow-public-cidr
 
 Deploy generates disposable SFTP credentials into `.local/<stack-name>-credentials.env`, which is ignored by Git. Do not commit generated credentials or stack outputs.
 
+Common lifecycle commands:
+
+```text
+npm run describe
+npm run stop
+npm run start
+npm run destroy
+```
+
+`stop` preserves the stack and attached storage for later reuse. `destroy` deletes CloudFormation-managed runtime resources and is the preferred cleanup path when testing is complete.
+
 ## Diagram Rendering
 
 PlantUML diagrams follow the SimpleETL local-preview workflow. Install Java SDK, Graphviz, and the recommended VS Code PlantUML extension, then preview `.puml` files from VS Code. Details live in `docs/operations/diagram-rendering.md`.

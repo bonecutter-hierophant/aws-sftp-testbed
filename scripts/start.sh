@@ -5,4 +5,87 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "$script_dir/lib/common.sh"
 
-not_implemented "start.sh"
+profile="${AWS_SFTP_SERVER_PROFILE:-aws-sftp-server-operator}"
+region="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-1}}"
+stack_name="aws-sftp-server"
+wait_for_running="true"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  scripts/start.sh [options]
+
+Start the EC2 instance in an existing SFTP testbed stack.
+
+Options:
+  --profile <profile>  AWS CLI profile. Defaults to AWS_SFTP_SERVER_PROFILE
+                       or aws-sftp-server-operator.
+  --region <region>    AWS region. Defaults to AWS_REGION, AWS_DEFAULT_REGION,
+                       or us-west-1.
+  --stack-name <name>  CloudFormation stack name. Defaults to aws-sftp-server.
+  --no-wait            Do not wait for EC2 instance-running state.
+  -h, --help           Show this help.
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --profile)
+      [[ $# -ge 2 ]] || fail "--profile requires a value."
+      profile="$2"
+      shift 2
+      ;;
+    --region)
+      [[ $# -ge 2 ]] || fail "--region requires a value."
+      region="$2"
+      shift 2
+      ;;
+    --stack-name)
+      [[ $# -ge 2 ]] || fail "--stack-name requires a value."
+      stack_name="$2"
+      shift 2
+      ;;
+    --no-wait)
+      wait_for_running="false"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown argument: $1"
+      ;;
+  esac
+done
+
+require_command aws
+validate_bootstrap_name "$stack_name" "stack name"
+
+instance_id="$(stack_instance_id "$profile" "$region" "$stack_name")"
+[[ -n "$instance_id" && "$instance_id" != "None" ]] || fail "Unable to find instance ID from stack outputs."
+
+printf 'Start AWS SFTP testbed instance\n'
+printf '\n'
+printf 'This command starts an existing EC2 runtime resource and may change public IP/DNS.\n'
+printf 'Do not commit command output or generated connection details.\n'
+printf '\n'
+printf 'Stack name: %s\n' "$stack_name"
+printf 'Instance ID: %s\n' "$instance_id"
+printf '\n'
+
+aws ec2 start-instances \
+  --profile "$profile" \
+  --region "$region" \
+  --instance-ids "$instance_id" \
+  --output table
+
+if [[ "$wait_for_running" == "true" ]]; then
+  printf '\nWaiting for instance-running state...\n'
+  aws ec2 wait instance-running \
+    --profile "$profile" \
+    --region "$region" \
+    --instance-ids "$instance_id"
+fi
+
+printf '\nStart complete. Run describe.sh to see the current public endpoint.\n'

@@ -24,11 +24,18 @@ Implemented routine commands:
 - `validate-routine-access.sh`: confirms caller identity for the routine profile and verifies AWS Organizations bootstrap access is denied.
 - `deploy.sh`: validates CIDR safety inputs, generates disposable local SFTP credentials, deploys the CloudFormation stack, and prints non-sensitive stack outputs. Generated credentials are written under `.local/`.
 - `describe.sh`: prints non-sensitive stack, endpoint, and SFTP metadata and attempts host key fingerprint discovery without printing credentials.
+- `start.sh`: starts an existing stopped EC2 instance and warns that public endpoint values may change.
+- `stop.sh`: stops EC2 compute while warning that attached storage and other resources may still incur charges.
+- `destroy.sh`: deletes the CloudFormation-managed runtime stack while preserving durable account access and project-owned secrets.
 
 Common deploy form:
 
 ```text
 npm run deploy -- <source-cidr>
+npm run describe
+npm run stop
+npm run start
+npm run destroy
 ```
 
 Bootstrap commands live in `scripts/bootstrap/`. They are intentionally separate from routine testbed commands because they may use management-account access to inspect or configure AWS Organizations and IAM Identity Center.
