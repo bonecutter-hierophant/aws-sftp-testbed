@@ -149,7 +149,7 @@ The account creation command is `scripts/bootstrap/create-account.sh`. It create
 
 AWS Organizations creates the named cross-account access role in the new member account during account creation. Bootstrap uses that role only to complete account setup and validate the lower-privilege operating lane. Routine testbed commands should use the project-scoped IAM Identity Center assignment instead.
 
-The permission set command is `scripts/bootstrap/ensure-permission-set.sh`. It creates or updates the public-safe `AwsSftpServer-Operator` permission set and installs an inline policy for routine CloudFormation, EC2, IAM instance profile, Secrets Manager, SSM public AMI parameter, and caller-identity operations needed by this project. It refuses to run unless the caller passes both `--bootstrap` and `--approve-permission-set`.
+The permission set command is `scripts/bootstrap/ensure-permission-set.sh`. It creates or updates the public-safe `AwsSftpServer-Operator` permission set and installs an inline policy for routine CloudFormation, EC2, Secrets Manager, SSM public AMI parameter, and caller-identity operations needed by this project. It refuses to run unless the caller passes both `--bootstrap` and `--approve-permission-set`.
 
 The assignment command is `scripts/bootstrap/assign-permission-set.sh`. It assigns the project permission set to the operator IAM Identity Center user for the project account and polls the asynchronous assignment request. It refuses to run unless the caller passes both `--bootstrap` and `--approve-assignment`.
 
@@ -168,10 +168,11 @@ Routine operator permissions should include only:
 - CloudFormation actions needed to create, update, inspect, and delete this project's stack
 - EC2 actions needed to create, tag, inspect, start, stop, and terminate this project's runtime resources
 - security group actions needed for the explicit SFTP ingress boundary
-- IAM instance profile and pass-role actions only for project-prefixed roles and instance profiles required by the runtime stack
 - Secrets Manager actions needed to create, read, and update the project-owned secret
 - SSM public parameter reads for the Amazon Linux 2023 AMI
 - caller identity and account metadata reads needed for validation and diagnostics
+
+The current CloudFormation runtime shape does not require an EC2 instance profile because instance bootstrap does not call AWS APIs. If a future runtime change adds an instance profile, add IAM role, instance profile, and pass-role permissions only for project-prefixed resources and document why they are needed.
 
 Routine operator permissions should not include:
 

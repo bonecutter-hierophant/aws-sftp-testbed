@@ -36,6 +36,12 @@ validate_positive_integer() {
   [[ "$value" =~ ^[1-9][0-9]*$ ]] || fail "Invalid $label: expected a positive integer."
 }
 
+validate_sftp_username() {
+  local value="$1"
+
+  [[ "$value" =~ ^[a-z_][a-z0-9_-]{1,31}$ ]] || fail "Invalid SFTP username: use 2-32 lowercase letters, numbers, underscores, or hyphens, starting with a letter or underscore."
+}
+
 require_allowed_cidr() {
   local allowed_cidr="${1:-}"
   local allow_public="${2:-false}"

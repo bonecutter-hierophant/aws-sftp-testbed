@@ -12,7 +12,7 @@ The public shape matters because this kind of tool sits at an unusual boundary. 
 - [x] Initial documentation and ownership structure established
 - [x] Public-repository sanitization and static verification scaffolded
 - [x] AWS account bootstrap workflow implemented and documented
-- [ ] CloudFormation template implemented
+- [x] CloudFormation template implemented
 - [ ] Deploy/start/stop/destroy scripts implemented
 - [ ] Secrets Manager update flow implemented
 - [ ] SFTP smoke test implemented
@@ -90,6 +90,22 @@ Current gates:
 - `docs` checks text files for trailing whitespace.
 
 Future runtime work should add deterministic dry-run checks before any live AWS smoke test becomes part of the workflow.
+
+## Deploy Preview
+
+The deploy command creates or updates the disposable runtime stack and requires an explicit inbound SFTP source CIDR:
+
+```text
+npm run deploy -- <source-cidr>
+```
+
+Temporary public exposure must be explicit:
+
+```text
+npm run deploy -- 0.0.0.0/0 allow-public-cidr
+```
+
+Deploy generates disposable SFTP credentials into `.local/<stack-name>-credentials.env`, which is ignored by Git. Do not commit generated credentials or stack outputs.
 
 ## Diagram Rendering
 

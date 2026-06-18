@@ -134,34 +134,34 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 
 ### 4. CloudFormation Infrastructure
 
-- [ ] Replace scaffold template with real CloudFormation resources.
-- [ ] Use the current Amazon Linux 2023 AMI through SSM public parameters.
-- [ ] Add configurable stack name, project name, region, instance type, and allowed CIDR parameters.
-- [ ] Create security group allowing inbound TCP 22 only from `AllowedCidr`.
-- [ ] Add explicit public-open override path for temporary `0.0.0.0/0` use.
-- [ ] Create EC2 instance with minimal EBS volume.
-- [ ] Add IAM instance profile only if runtime bootstrap needs AWS API access.
-- [ ] Configure tags on every resource.
-- [ ] Output instance ID, public DNS/IP, security group ID, and non-sensitive connection metadata.
-- [ ] Keep Elastic IP, NAT Gateway, load balancer, Transfer Family, and multi-AZ resources out of MVP.
+- [x] Replace scaffold template with real CloudFormation resources.
+- [x] Use the current Amazon Linux 2023 AMI through SSM public parameters.
+- [x] Add configurable stack name, project name, region, instance type, and allowed CIDR parameters.
+- [x] Create security group allowing inbound TCP 22 only from `AllowedCidr`.
+- [x] Add explicit public-open override path for temporary `0.0.0.0/0` use.
+- [x] Create EC2 instance with minimal EBS volume.
+- [x] Add IAM instance profile only if runtime bootstrap needs AWS API access.
+- [x] Configure tags on every resource.
+- [x] Output instance ID, public DNS/IP, security group ID, and non-sensitive connection metadata.
+- [x] Keep Elastic IP, NAT Gateway, load balancer, Transfer Family, and multi-AZ resources out of MVP.
 
 ### 5. SFTP Host Bootstrap
 
-- [ ] Configure OpenSSH `internal-sftp`.
-- [ ] Create chroot-safe SFTP directory layout.
-- [ ] Use `/data` as the MVP remote path.
-- [ ] Disable shell access for the SFTP user.
-- [ ] Disable root SSH login.
-- [ ] Disable forwarding and tunneling.
-- [ ] Generate random password credentials.
-- [ ] Add optional SSH public-key auth support if it remains low-risk.
-- [ ] Emit host key fingerprint without exposing private key material.
-- [ ] Ensure no generated credential or key material is written into tracked paths.
+- [x] Configure OpenSSH `internal-sftp`.
+- [x] Create chroot-safe SFTP directory layout.
+- [x] Use `/data` as the MVP remote path.
+- [x] Disable shell access for the SFTP user.
+- [x] Disable root SSH login.
+- [x] Disable forwarding and tunneling.
+- [x] Generate random password credentials.
+- [x] Decide SSH public-key auth is not part of the first runtime implementation because password auth satisfies the MVP and key material handling should be reviewed separately.
+- [x] Emit host key fingerprint without exposing private key material.
+- [x] Ensure no generated credential or key material is written into tracked paths.
 
 ### 6. Script Command Surface
 
 - [ ] Keep command behavior installer-like: each command should perform a bounded AWS setup, inspection, test, stop, or teardown task and then exit.
-- [ ] Implement `scripts/deploy.sh`.
+- [x] Implement `scripts/deploy.sh`.
 - [ ] Implement `scripts/start.sh`.
 - [ ] Implement `scripts/stop.sh`.
 - [ ] Implement `scripts/destroy.sh`.
@@ -173,7 +173,7 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 - [ ] Add safe defaults and refusal messages for unsafe inputs.
 - [ ] Redact sensitive values by default.
 - [ ] Add `--show-sensitive` only where genuinely useful and clearly labeled.
-- [ ] Ensure `describe.sh` prints current host, port, username, remote path, host key fingerprint, and stack/resource status without printing secrets.
+- [x] Ensure `describe.sh` prints current host, port, username, remote path, host key fingerprint, and stack/resource status without printing secrets.
 - [ ] Add bootstrap command surface only after its safety prompts, docs, and dry-run behavior are approved.
 
 ### 7. Secrets Manager Integration

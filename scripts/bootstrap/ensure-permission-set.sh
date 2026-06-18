@@ -12,6 +12,8 @@ project_name="aws-sftp-server"
 sso_region="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-1}}"
 session_duration="PT4H"
 instance_arn=""
+poll_interval_seconds="10"
+poll_max_attempts="30"
 aws_args=()
 
 usage() {
@@ -35,6 +37,8 @@ Options:
   --instance-arn <arn>         IAM Identity Center instance ARN. Required only if
                                more than one instance is visible.
   --session-duration <value>   ISO-8601 session duration. Defaults to PT4H.
+  --poll-interval <seconds>    Seconds between provisioning checks. Defaults to 10.
+  --poll-max-attempts <count>  Maximum provisioning checks. Defaults to 30.
   --profile <profile>          AWS CLI profile to use. Prefer local-only profile names.
   -h, --help                   Show this help.
 
@@ -115,33 +119,6 @@ write_inline_policy() {
       "Resource": "*"
     },
     {
-      "Sid": "IamProjectInstanceProfile",
-      "Effect": "Allow",
-      "Action": [
-        "iam:AddRoleToInstanceProfile",
-        "iam:AttachRolePolicy",
-        "iam:CreateInstanceProfile",
-        "iam:CreateRole",
-        "iam:DeleteInstanceProfile",
-        "iam:DeleteRole",
-        "iam:DeleteRolePolicy",
-        "iam:GetInstanceProfile",
-        "iam:GetRole",
-        "iam:ListAttachedRolePolicies",
-        "iam:ListInstanceProfiles",
-        "iam:ListRolePolicies",
-        "iam:PassRole",
-        "iam:PutRolePolicy",
-        "iam:RemoveRoleFromInstanceProfile",
-        "iam:TagInstanceProfile",
-        "iam:TagRole"
-      ],
-      "Resource": [
-        "arn:aws:iam::*:instance-profile/${prefix}-*",
-        "arn:aws:iam::*:role/${prefix}-*"
-      ]
-    },
-    {
       "Sid": "SecretsManagerProjectSecrets",
       "Effect": "Allow",
       "Action": [
@@ -175,6 +152,65 @@ write_inline_policy() {
   ]
 }
 POLICY
+}
+
+provision_if_assigned() {
+  local permission_set_arn="$1"
+  local provisioned_accounts
+  local request_id
+  local status_line
+  local status
+  local failure_reason
+
+  provisioned_accounts="$(aws "${aws_args[@]}" sso-admin list-accounts-for-provisioned-permission-set \
+    --region "$sso_region" \
+    --instance-arn "$instance_arn" \
+    --permission-set-arn "$permission_set_arn" \
+    --query 'AccountIds[]' \
+    --output text)"
+
+  if [[ -z "$provisioned_accounts" ]]; then
+    printf 'Permission set is not provisioned to any account yet; skipping provisioning.\n'
+    return 0
+  fi
+
+  printf 'Provisioning permission set to assigned accounts...\n'
+  request_id="$(aws "${aws_args[@]}" sso-admin provision-permission-set \
+    --region "$sso_region" \
+    --instance-arn "$instance_arn" \
+    --permission-set-arn "$permission_set_arn" \
+    --target-type ALL_PROVISIONED_ACCOUNTS \
+    --query 'PermissionSetProvisioningStatus.RequestId' \
+    --output text)"
+
+  [[ -n "$request_id" && "$request_id" != "None" ]] || fail "AWS did not return a permission set provisioning request ID."
+
+  for ((attempt = 1; attempt <= poll_max_attempts; attempt += 1)); do
+    status_line="$(aws "${aws_args[@]}" sso-admin describe-permission-set-provisioning-status \
+      --region "$sso_region" \
+      --instance-arn "$instance_arn" \
+      --provision-permission-set-request-id "$request_id" \
+      --query 'PermissionSetProvisioningStatus.[Status,FailureReason]' \
+      --output text)"
+
+    read -r status failure_reason <<<"$status_line"
+    printf '[%s/%s] provisioning status=%s\n' "$attempt" "$poll_max_attempts" "$status"
+
+    if [[ "$status" == "SUCCEEDED" ]]; then
+      printf 'Permission set provisioning succeeded.\n'
+      return 0
+    fi
+
+    if [[ "$status" == "FAILED" ]]; then
+      fail "Permission set provisioning failed: ${failure_reason:-unknown}"
+    fi
+
+    if [[ "$attempt" -lt "$poll_max_attempts" ]]; then
+      sleep "$poll_interval_seconds"
+    fi
+  done
+
+  fail "Permission set provisioning did not finish within the polling window."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -212,6 +248,16 @@ while [[ $# -gt 0 ]]; do
       session_duration="$2"
       shift 2
       ;;
+    --poll-interval)
+      [[ $# -ge 2 ]] || fail "--poll-interval requires a value."
+      poll_interval_seconds="$2"
+      shift 2
+      ;;
+    --poll-max-attempts)
+      [[ $# -ge 2 ]] || fail "--poll-max-attempts requires a value."
+      poll_max_attempts="$2"
+      shift 2
+      ;;
     --profile)
       [[ $# -ge 2 ]] || fail "--profile requires a value."
       aws_args+=(--profile "$2")
@@ -231,6 +277,8 @@ require_bootstrap_selected "$bootstrap_selected"
 require_command aws
 validate_bootstrap_name "$permission_set_name" "permission set name"
 validate_bootstrap_name "$project_name" "project name"
+validate_positive_integer "$poll_interval_seconds" "poll interval"
+validate_positive_integer "$poll_max_attempts" "poll max attempts"
 
 if [[ "$approved_permission_set" != "true" ]]; then
   fail "Refusing permission set changes without --approve-permission-set."
@@ -298,6 +346,8 @@ aws "${aws_args[@]}" sso-admin put-inline-policy-to-permission-set \
   --instance-arn "$instance_arn" \
   --permission-set-arn "$permission_set_arn" \
   --inline-policy "$policy_document"
+
+provision_if_assigned "$permission_set_arn"
 
 printf 'Permission set is ready: %s\n' "$permission_set_name"
 printf 'Next phase: assign this permission set to the operator identity for the project account.\n'

@@ -1,19 +1,171 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Disposable AWS SFTP testbed scaffold. Resources are intentionally not implemented in the first structure commit.
+Description: Disposable AWS SFTP server for integration testing. Creates public EC2 runtime resources only.
 
 Parameters:
   AllowedCidr:
     Type: String
     Description: CIDR allowed to reach TCP 22 on the SFTP testbed. Required by deploy scripts.
     AllowedPattern: "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+  AllowPublicCidr:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "false"
+      - "true"
+    Description: Temporary override required when AllowedCidr is 0.0.0.0/0.
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    Description: EC2 instance type for the disposable SFTP server.
+    AllowedPattern: "^[a-z0-9]+\\.[a-z0-9]+$"
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: Current Amazon Linux 2023 x86_64 AMI from the public SSM parameter store.
   ProjectName:
     Type: String
-    Default: aws-sftp-testbed
+    Default: aws-sftp-server
     Description: Project tag value for disposable resources.
+    AllowedPattern: "^[A-Za-z0-9][A-Za-z0-9_.-]{1,63}$"
+  SftpUsername:
+    Type: String
+    Default: sftpuser
+    Description: SFTP username created on the instance.
+    AllowedPattern: "^[a-z_][a-z0-9_-]{1,31}$"
+  SftpPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 16
+    MaxLength: 128
+    Description: Disposable SFTP password supplied by the deploy script. Do not commit or print this value.
 
-Resources: {}
+Rules:
+  PublicCidrRequiresOverride:
+    Assertions:
+      - Assert:
+          Fn::Or:
+            - Fn::Not:
+                - Fn::Equals:
+                    - Ref: AllowedCidr
+                    - 0.0.0.0/0
+            - Fn::Equals:
+                - Ref: AllowPublicCidr
+                - "true"
+        AssertDescription: AllowedCidr 0.0.0.0/0 requires AllowPublicCidr=true.
+
+Resources:
+  SftpSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${ProjectName} disposable SFTP ingress"
+      SecurityGroupIngress:
+        - Description: Explicit SFTP source CIDR
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AllowedCidr
+      SecurityGroupEgress:
+        - Description: Allow outbound package and system updates
+          IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Component
+          Value: sftp-security-group
+        - Key: ManagedBy
+          Value: aws-sftp-testbed
+
+  SftpInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+        - !GetAtt SftpSecurityGroup.GroupId
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: true
+            VolumeSize: 8
+            VolumeType: gp3
+      MetadataOptions:
+        HttpEndpoint: enabled
+        HttpTokens: required
+      PropagateTagsToVolumeOnCreation: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-sftp"
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Component
+          Value: sftp-instance
+        - Key: ManagedBy
+          Value: aws-sftp-testbed
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euo pipefail
+
+          dnf install -y openssh-server
+
+          if ! id "${SftpUsername}" >/dev/null 2>&1; then
+            useradd --no-create-home --home-dir /data --shell /sbin/nologin "${SftpUsername}"
+          fi
+
+          printf '%s:%s\n' "${SftpUsername}" "${SftpPassword}" | chpasswd
+
+          mkdir -p /sftp/data
+          chown root:root /sftp
+          chmod 755 /sftp
+          chown "${SftpUsername}:${SftpUsername}" /sftp/data
+          chmod 750 /sftp/data
+
+          if ! grep -q '^PermitRootLogin no$' /etc/ssh/sshd_config; then
+            printf '\nPermitRootLogin no\n' >> /etc/ssh/sshd_config
+          fi
+
+          if ! grep -q '^PasswordAuthentication yes$' /etc/ssh/sshd_config; then
+            printf '\nPasswordAuthentication yes\n' >> /etc/ssh/sshd_config
+          fi
+
+          cat >/etc/ssh/sshd_config.d/99-aws-sftp-testbed.conf <<'SSHD_CONFIG'
+          Match User ${SftpUsername}
+              ChrootDirectory /sftp
+              ForceCommand internal-sftp -d /data
+              AllowTcpForwarding no
+              X11Forwarding no
+              PermitTunnel no
+              PasswordAuthentication yes
+          SSHD_CONFIG
+
+          systemctl enable sshd
+          systemctl restart sshd
+
 
 Outputs:
   ProjectName:
     Description: Project name tag used by the testbed.
     Value: !Ref ProjectName
+  InstanceId:
+    Description: EC2 instance ID for lifecycle operations.
+    Value: !Ref SftpInstance
+  PublicDnsName:
+    Description: Current public DNS name for the SFTP endpoint.
+    Value: !GetAtt SftpInstance.PublicDnsName
+  PublicIp:
+    Description: Current public IPv4 address for the SFTP endpoint.
+    Value: !GetAtt SftpInstance.PublicIp
+  SecurityGroupId:
+    Description: Security group controlling SFTP ingress.
+    Value: !GetAtt SftpSecurityGroup.GroupId
+  SftpPort:
+    Description: SFTP port.
+    Value: 22
+  SftpUsername:
+    Description: SFTP username. Password is intentionally not output.
+    Value: !Ref SftpUsername
+  RemotePath:
+    Description: Remote path visible to SFTP clients.
+    Value: /data
