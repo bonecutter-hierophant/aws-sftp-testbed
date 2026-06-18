@@ -25,6 +25,7 @@
     "stop": "node tools/run-bash-script.mjs scripts/stop.sh",
     "destroy": "node tools/run-bash-script.mjs scripts/destroy.sh --approve-destroy",
     "describe": "node tools/run-bash-script.mjs scripts/describe.sh",
+    "update:parameter": "node tools/run-bash-script.mjs scripts/update-parameter.sh",
     "smoke:test": "node tools/run-bash-script.mjs scripts/smoke-test.sh"
   },
   "repository": {

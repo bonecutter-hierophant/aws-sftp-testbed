@@ -45,7 +45,7 @@ const requiredFiles = [
   "scripts/stop.sh",
   "scripts/destroy.sh",
   "scripts/describe.sh",
-  "scripts/update-secret.sh",
+  "scripts/update-parameter.sh",
   "scripts/smoke-test.sh",
   "tools/README.md"
 ];

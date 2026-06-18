@@ -14,7 +14,7 @@ Do not commit:
 - private AWS account IDs, IAM ARNs, access keys, live profile names, or account aliases
 - generated AWS CLI responses, CloudFormation outputs, stack event dumps, or deployment logs
 - generated SFTP host keys, client keys, known-hosts files, or smoke-test artifacts
-- live Secrets Manager values or secret payloads
+- live secret, SecureString, or parameter payloads
 - local operator configuration from `.local/`
 - customer data, private project context, or machine-local private paths
 - generated scratch output, logs, dependency folders, build output, or infrastructure state files

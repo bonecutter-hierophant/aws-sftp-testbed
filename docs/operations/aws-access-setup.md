@@ -12,7 +12,7 @@ The AWS account, IAM principal, local AWS profile, and related access setup can 
 
 Bootstrap uses elevated access by design. It may require management-account or administrator credentials to create or configure a new AWS account, identity, role, permission set, or policy. Bootstrap commands must be explicit, human-approved, and dry-run documented before they perform live AWS changes.
 
-Routine operation should use narrower project-scoped access that can deploy, start, stop, describe, smoke-test, update secrets for, and destroy this project's SFTP runtime resources without retaining account-creation authority.
+Routine operation should use narrower project-scoped access that can deploy, start, stop, describe, smoke-test, update connection parameters for, and destroy this project's SFTP runtime resources without retaining account-creation authority.
 
 This is the ratchet: use elevated access to create the safer operating lane, then use the safer operating lane for the work the project exists to do.
 
@@ -23,7 +23,7 @@ The approved privilege sequence is:
 1. Create the project-scoped identity and permission set.
 1. Validate that the new project-scoped access works inside the project account.
 1. Switch routine commands to the project-scoped profile or role.
-1. Use the project-scoped access for EC2, CloudFormation, Secrets Manager, and SFTP smoke-test operations.
+1. Use the project-scoped access for EC2, CloudFormation, Systems Manager Parameter Store, and SFTP smoke-test operations.
 1. Keep admin access out of normal deploy, start, stop, destroy, describe, and smoke-test commands.
 
 ## Access Model
@@ -35,7 +35,7 @@ The identity should be scoped to:
 - deploy, update, describe, and delete this project's CloudFormation stack
 - create, tag, describe, start, stop, and terminate only this project's EC2 resources
 - manage the project security group rules needed for SFTP
-- create or update the project-owned Secrets Manager secret
+- create or update the project-owned Parameter Store connection parameter
 - pass only the IAM role required by the EC2 instance profile
 - read the SSM public AMI parameter for Amazon Linux 2023
 
@@ -47,7 +47,7 @@ Some environments may have a pre-existing management-account IAM user or role fo
 
 - the management-account IAM principal is used to create or configure the project account and Identity Center assignment
 - the routine SFTP server work switches to the IAM Identity Center identity assigned to the project account
-- normal deploy, start, stop, destroy, describe, secret-update, and smoke-test commands do not use the management-account bootstrap principal
+- normal deploy, start, stop, destroy, describe, parameter-update, and smoke-test commands do not use the management-account bootstrap principal
 
 An operator may have both an IAM principal and an IAM Identity Center identity. Treat those as separate access paths even when they represent the same person or team.
 
@@ -69,7 +69,7 @@ Durable:
 - optional IAM Identity Center permission set or account assignment
 - local AWS profile name kept outside source control
 - project permissions policy
-- optional project-owned secret name
+- optional project-owned connection parameter name
 
 Disposable:
 
@@ -127,7 +127,7 @@ The preferred bootstrap model for this repository is:
 1. Use a public-safe account name such as `aws-sftp-server` when documenting the workflow.
 1. Create or update a public-safe IAM Identity Center permission set such as `AwsSftpServer-Operator`.
 1. Assign that permission set to the existing operator identity for the project account.
-1. Validate routine access through the assigned identity before creating EC2, Secrets Manager, or network resources.
+1. Validate routine access through the assigned identity before creating EC2, Parameter Store, or network resources.
 
 The dedicated account is intentional. This testbed simulates an external SFTP server owned outside the consuming application, so it should not be attached to a larger development environment. The separation also keeps billing clearer and prevents EC2 create/destroy permissions from becoming part of unrelated project accounts.
 
@@ -149,7 +149,7 @@ The account creation command is `scripts/bootstrap/create-account.sh`. It create
 
 AWS Organizations creates the named cross-account access role in the new member account during account creation. Bootstrap uses that role only to complete account setup and validate the lower-privilege operating lane. Routine testbed commands should use the project-scoped IAM Identity Center assignment instead.
 
-The permission set command is `scripts/bootstrap/ensure-permission-set.sh`. It creates or updates the public-safe `AwsSftpServer-Operator` permission set and installs an inline policy for routine CloudFormation, EC2, Secrets Manager, SSM public AMI parameter, and caller-identity operations needed by this project. It refuses to run unless the caller passes both `--bootstrap` and `--approve-permission-set`.
+The permission set command is `scripts/bootstrap/ensure-permission-set.sh`. It creates or updates the public-safe `AwsSftpServer-Operator` permission set and installs an inline policy for routine CloudFormation, EC2, SSM public AMI parameter reads, project connection parameter writes, and caller-identity operations needed by this project. It refuses to run unless the caller passes both `--bootstrap` and `--approve-permission-set`.
 
 The assignment command is `scripts/bootstrap/assign-permission-set.sh`. It assigns the project permission set to the operator IAM Identity Center user for the project account and polls the asynchronous assignment request. It refuses to run unless the caller passes both `--bootstrap` and `--approve-assignment`.
 
@@ -168,8 +168,8 @@ Routine operator permissions should include only:
 - CloudFormation actions needed to create, update, inspect, and delete this project's stack
 - EC2 actions needed to create, tag, inspect, start, stop, and terminate this project's runtime resources
 - security group actions needed for the explicit SFTP ingress boundary
-- Secrets Manager actions needed to create, read, and update the project-owned secret
 - SSM public parameter reads for the Amazon Linux 2023 AMI
+- SSM Parameter Store actions needed to create, read, update, and optionally delete the project-owned connection parameter
 - caller identity and account metadata reads needed for validation and diagnostics
 
 The current CloudFormation runtime shape does not require an EC2 instance profile because instance bootstrap does not call AWS APIs. If a future runtime change adds an instance profile, add IAM role, instance profile, and pass-role permissions only for project-prefixed resources and document why they are needed.
@@ -181,9 +181,11 @@ Routine operator permissions should not include:
 - broad administrator access
 - access to unrelated project accounts
 - permission to close AWS accounts
-- permission to delete durable project secrets as part of normal runtime teardown
+- permission to delete durable project connection parameters as part of normal runtime teardown
 
 A committed sanitized IAM policy template should be added only after the CloudFormation template and runtime resource names are implemented. Until then, keep the public documentation at the permission-category level and keep any live policy output out of source control.
+
+Connection details are published to Systems Manager Parameter Store as a `SecureString` parameter. Secrets Manager is intentionally not the MVP default because managed rotation is not part of the disposable testbed credential model. Prefer destroy and redeploy for testbed credential rotation unless a future reviewed feature adds managed rotation.
 
 ## Setup Guide
 

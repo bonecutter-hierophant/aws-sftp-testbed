@@ -21,7 +21,7 @@ The repo owns the commands and documentation that affect AWS. The SFTP server ru
 
 ## Ownership
 
-- `scripts/` owns user-facing commands such as deploy, start, stop, destroy, describe, secret update, and smoke testing.
+- `scripts/` owns user-facing commands such as deploy, start, stop, destroy, describe, parameter update, and smoke testing.
 - `scripts/lib/` owns shared shell helpers for argument parsing, safety checks, AWS CLI invocation, and output formatting.
 - `infra/cloudformation/` owns the CloudFormation template for EC2, security group, IAM instance profile, and related disposable resources.
 - `docs/operations/` owns workflow, AWS safety boundaries, and verification policy.
@@ -30,4 +30,4 @@ The repo owns the commands and documentation that affect AWS. The SFTP server ru
 
 ## Public Safety
 
-Generated credentials, AWS CLI output, stack exports, local profiles, and operator-specific values must stay out of source control. Use `.local/`, environment variables, AWS Secrets Manager, and ignored generated files for live values.
+Generated credentials, AWS CLI output, stack exports, local profiles, and operator-specific values must stay out of source control. Use `.local/`, environment variables, AWS Systems Manager Parameter Store, and ignored generated files for live values.

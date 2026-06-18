@@ -116,4 +116,4 @@ aws sts get-caller-identity \
   --output table
 
 printf '\n'
-printf 'Routine login complete. Use this profile for deploy, describe, start, stop, destroy, secret update, and smoke-test commands.\n'
+printf 'Routine login complete. Use this profile for deploy, describe, start, stop, destroy, parameter update, and smoke-test commands.\n'

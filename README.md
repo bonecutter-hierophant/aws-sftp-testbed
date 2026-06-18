@@ -13,9 +13,9 @@ The public shape matters because this kind of tool sits at an unusual boundary. 
 - [x] Public-repository sanitization and static verification scaffolded
 - [x] AWS account bootstrap workflow implemented and documented
 - [x] CloudFormation template implemented
-- [ ] Deploy/start/stop/destroy scripts implemented
-- [ ] Secrets Manager update flow implemented
-- [ ] SFTP smoke test implemented
+- [x] Deploy/start/stop/destroy scripts implemented
+- [x] Parameter Store update flow implemented
+- [x] SFTP smoke test implemented
 
 ## Intended Shape
 
@@ -25,7 +25,7 @@ The MVP should provide AWS CLI wrapper scripts that can:
 - require a caller-provided allowed CIDR for inbound SFTP
 - generate disposable SFTP credentials
 - discover the current public host after deploy or start
-- update AWS Secrets Manager with current connection details
+- update AWS Systems Manager Parameter Store with current connection details
 - run an SFTP smoke test for connect, upload, list, download, and delete
 - stop or destroy the testbed when testing is complete
 
@@ -52,6 +52,7 @@ The long-term goal is not merely "an EC2 instance with SSH enabled." The goal is
 - Public repository sanitization: `docs/operations/public-repository-sanitization.md`
 - AWS SFTP boundary: `docs/operations/aws-sftp-boundary.md`
 - AWS access setup: `docs/operations/aws-access-setup.md`
+- Source CIDR discovery: `docs/operations/source-cidr-discovery.md`
 - Diagram rendering: `docs/operations/diagram-rendering.md`
 - MVP tooling roadmap: `docs/proposals/mvp-tooling-roadmap.md`
 - Sandbox-safe verification: `docs/operations/sandbox-safe-verification.md`
@@ -116,7 +117,29 @@ npm run start
 npm run destroy
 ```
 
-`stop` preserves the stack and attached storage for later reuse. `destroy` deletes CloudFormation-managed runtime resources and is the preferred cleanup path when testing is complete.
+`stop` preserves the stack, attached storage, and published connection parameter for later reuse. `start` refreshes the parameter because public endpoint values may change. `destroy` deletes CloudFormation-managed runtime resources and removes the published connection parameter by default so stale endpoints do not accumulate. Direct script users can pass `--keep-parameter` for explicit debugging or handoff cases.
+
+Deploy and start refresh the project-owned connection parameter by default. You can also update it directly:
+
+```text
+npm run update:parameter
+```
+
+Run the SFTP smoke test after the instance is reachable:
+
+```text
+npm run smoke:test
+```
+
+The smoke test requires `sshpass`, `sftp`, and `ssh-keyscan` for noninteractive password authentication.
+
+Interim connection parameter schema:
+
+```text
+host, publicIp, port, username, password, remotePath, hostKeyFingerprints, projectName
+```
+
+The MVP uses SSM Parameter Store `SecureString` for this published connection payload. This schema is interim until the consuming SFTP implementation settles. Secrets Manager is left as a future option for managed rotation workflows, but disposable testbed credential rotation should normally happen through redeploying the runtime stack.
 
 ## Diagram Rendering
 

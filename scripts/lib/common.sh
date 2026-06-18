@@ -77,6 +77,28 @@ stack_instance_id() {
   stack_output "$profile" "$region" "$stack_name" "InstanceId"
 }
 
+credentials_file_for_stack() {
+  local stack_name="$1"
+
+  printf '%s/.local/%s-credentials.env\n' "$(repo_root)" "$stack_name"
+}
+
+load_stack_credentials() {
+  local stack_name="$1"
+  local credentials_file
+
+  credentials_file="$(credentials_file_for_stack "$stack_name")"
+  [[ -f "$credentials_file" ]] || fail "Credentials file not found: .local/${stack_name}-credentials.env. Run deploy first or restore local credentials."
+
+  # shellcheck disable=SC1090
+  source "$credentials_file"
+
+  [[ -n "${SFTP_USERNAME:-}" ]] || fail "Credentials file is missing SFTP_USERNAME."
+  [[ -n "${SFTP_PASSWORD:-}" ]] || fail "Credentials file is missing SFTP_PASSWORD."
+  [[ -n "${SFTP_REMOTE_PATH:-}" ]] || fail "Credentials file is missing SFTP_REMOTE_PATH."
+  [[ -n "${SFTP_PORT:-}" ]] || fail "Credentials file is missing SFTP_PORT."
+}
+
 require_allowed_cidr() {
   local allowed_cidr="${1:-}"
   local allow_public="${2:-false}"

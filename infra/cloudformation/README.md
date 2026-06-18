@@ -9,7 +9,7 @@ The template should eventually define:
 - IAM instance profile only if runtime bootstrap needs AWS API access
 - user data for OpenSSH `internal-sftp`
 - resource tags that identify the testbed and support cleanup
-- outputs needed by scripts to discover current host and update Secrets Manager
+- outputs needed by scripts to discover current host and update Parameter Store
 
 Do not commit generated stack outputs or live AWS identifiers.
 

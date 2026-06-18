@@ -8,6 +8,7 @@ Read these before implementation:
 - `public-repository-sanitization.md`
 - `aws-sftp-boundary.md`
 - `aws-access-setup.md`
+- `source-cidr-discovery.md`
 - `diagram-rendering.md`
 - `sandbox-safe-verification.md`
 - `scoped-verification-gates.md`

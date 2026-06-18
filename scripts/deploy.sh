@@ -14,6 +14,8 @@ sftp_username="sftpuser"
 allowed_cidr=""
 allow_public_cidr="false"
 show_sensitive="false"
+parameter_name="/aws-sftp-server/connection"
+skip_parameter_update="false"
 
 usage() {
   cat <<'USAGE'
@@ -36,6 +38,9 @@ Options:
   --project-name <name>        Project tag and resource prefix. Defaults to aws-sftp-server.
   --instance-type <type>       EC2 instance type. Defaults to t3.micro.
   --sftp-username <name>       SFTP username. Defaults to sftpuser.
+  --parameter-name <name>      SSM Parameter Store name. Defaults to
+                               /aws-sftp-server/connection.
+  --skip-parameter-update      Do not refresh Parameter Store after deploy.
   --show-sensitive             Print the generated disposable SFTP password.
   -h, --help                   Show this help.
 
@@ -84,6 +89,15 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || fail "--sftp-username requires a value."
       sftp_username="$2"
       shift 2
+      ;;
+    --parameter-name)
+      [[ $# -ge 2 ]] || fail "--parameter-name requires a value."
+      parameter_name="$2"
+      shift 2
+      ;;
+    --skip-parameter-update)
+      skip_parameter_update="true"
+      shift
       ;;
     --show-sensitive)
       show_sensitive="true"
@@ -151,6 +165,8 @@ printf '  Instance type: %s\n' "$instance_type"
 printf '  Allowed CIDR: %s\n' "$allowed_cidr"
 printf '  Public CIDR override: %s\n' "$allow_public_cidr"
 printf '  SFTP username: %s\n' "$sftp_username"
+printf '  Parameter name: %s\n' "$parameter_name"
+printf '  Parameter update: %s\n' "$([[ "$skip_parameter_update" == "true" ]] && printf 'skipped' || printf 'enabled')"
 printf '  Credentials file: .local/%s-credentials.env\n' "$stack_name"
 if [[ "$show_sensitive" == "true" ]]; then
   printf '  SFTP password: %s\n' "$sftp_password"
@@ -186,6 +202,15 @@ aws cloudformation describe-stacks \
   --stack-name "$stack_name" \
   --query 'Stacks[0].Outputs[].{Key:OutputKey,Value:OutputValue}' \
   --output table
+
+if [[ "$skip_parameter_update" != "true" ]]; then
+  printf '\nRefreshing SSM Parameter Store connection parameter...\n'
+  "$script_dir/update-parameter.sh" \
+    --profile "$profile" \
+    --region "$region" \
+    --stack-name "$stack_name" \
+    --parameter-name "$parameter_name"
+fi
 
 printf '\n'
 printf 'Deploy complete. Use destroy.sh for full runtime teardown when testing is complete.\n'

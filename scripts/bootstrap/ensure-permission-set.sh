@@ -119,19 +119,6 @@ write_inline_policy() {
       "Resource": "*"
     },
     {
-      "Sid": "SecretsManagerProjectSecrets",
-      "Effect": "Allow",
-      "Action": [
-        "secretsmanager:CreateSecret",
-        "secretsmanager:DescribeSecret",
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:PutSecretValue",
-        "secretsmanager:TagResource",
-        "secretsmanager:UpdateSecret"
-      ],
-      "Resource": "arn:aws:secretsmanager:*:*:secret:${prefix}*"
-    },
-    {
       "Sid": "ReadAmazonLinuxPublicAmiParameter",
       "Effect": "Allow",
       "Action": [
@@ -139,6 +126,18 @@ write_inline_policy() {
         "ssm:GetParameters"
       ],
       "Resource": "arn:aws:ssm:*::parameter/aws/service/ami-amazon-linux-latest/*"
+    },
+    {
+      "Sid": "ProjectConnectionParameters",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:DeleteParameter",
+        "ssm:DescribeParameters",
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:PutParameter"
+      ],
+      "Resource": "arn:aws:ssm:*:*:parameter/${prefix}/*"
     },
     {
       "Sid": "CallerAndRegionDiscovery",

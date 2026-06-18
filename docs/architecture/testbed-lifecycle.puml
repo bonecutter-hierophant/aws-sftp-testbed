@@ -6,7 +6,7 @@ participant "scripts/*.sh" as Scripts
 participant "AWS CLI" as AwsCli
 participant "CloudFormation Stack" as Stack
 participant "EC2 SFTP Instance" as Ec2
-participant "Secrets Manager" as Secrets
+participant "Parameter Store" as Parameters
 
 User -> Scripts: deploy with AllowedCidr
 Scripts -> Scripts: validate safety inputs
@@ -15,7 +15,7 @@ AwsCli -> Stack: create/update resources
 Stack -> Ec2: boot and configure internal-sftp
 Scripts -> AwsCli: describe stack/instance
 AwsCli --> Scripts: current public host
-Scripts -> Secrets: write connection secret
+Scripts -> Parameters: write connection parameter
 
 User -> Scripts: smoke-test
 Scripts -> Ec2: connect/upload/list/download/delete

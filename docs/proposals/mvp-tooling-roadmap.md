@@ -21,18 +21,20 @@ The proposal intentionally treats safety as part of the user experience. A usefu
 - Endpoint type: public EC2 public IPv4/DNS.
 - IP model: dynamic public IP, no Elastic IP by default.
 - SFTP server: Amazon Linux 2023 with OpenSSH `internal-sftp`.
-- Secret behavior: update AWS Secrets Manager after deploy/start.
+- Connection publication behavior: update AWS Systems Manager Parameter Store after deploy/start.
 - Auth MVP: username and password.
 - Auth bonus: SSH key support.
 - Remote path MVP: `/data`.
 - Lifecycle default: destroy when testing is complete.
 - Network safety: required `AllowedCidr`.
 - Public-open override: explicit temporary flag only.
-- SimpleETL coupling: loose secret schema contract for now.
+- SimpleETL coupling: loose connection parameter schema contract for now.
+
+Connection publication decision: use SSM Parameter Store `SecureString` for the MVP because standard parameters fit the low-cost disposable testbed model. Do not use Secrets Manager by default unless a future managed-rotation feature is reviewed and approved.
 
 ## Public-Repo Safety Notes
 
-- Do not commit AWS account IDs, ARNs, local profile names, generated credentials, stack output, host keys, smoke-test files, or live Secrets Manager payloads.
+- Do not commit AWS account IDs, ARNs, local profile names, generated credentials, stack output, host keys, smoke-test files, or live Parameter Store payloads.
 - Keep durable AWS access setup separate from disposable runtime infrastructure.
 - Refuse deploy without `AllowedCidr`.
 - Refuse `0.0.0.0/0` unless an explicit temporary override flag is provided.
@@ -53,7 +55,7 @@ The proposal intentionally treats safety as part of the user experience. A usefu
 
 Review notes:
 
-- Added durable-secret handling because the PRD says `destroy.sh` should not delete the Secrets Manager secret by default.
+- Added lifecycle-aware connection-parameter handling: stop/start preserve or refresh the parameter for reusable runtime stacks, while destroy removes it by default to avoid stale endpoint records.
 - Added command-output expectations for non-sensitive connection details because the PRD expects `describe.sh` to help the operator find the current host and SFTP username.
 - Added explicit tooling dependencies so the roadmap can produce the command-line experience described by the PRD.
 - Added AWS account bootstrap as an explicit product surface after proposal review. This is intentionally separate from routine testbed operation because it requires management-account or administrator authority. The approved privilege sequence is: use elevated bootstrap access to create the project AWS account, identity, and permission set; then ratchet down to the created project-scoped access for routine EC2/SFTP work.
@@ -65,7 +67,7 @@ Review notes:
 3. Create the project-scoped IAM Identity Center permission set for this SFTP server account, documented with a public-safe name such as `AwsSftpServer-Operator`.
 4. Verify the project-scoped identity can assume or access only the intended project account.
 5. Switch local routine commands to the project-scoped profile or role.
-6. Use the project-scoped access, not admin access, for CloudFormation, EC2, Secrets Manager, and smoke-test operations.
+6. Use the project-scoped access, not admin access, for CloudFormation, EC2, Parameter Store, and smoke-test operations.
 7. Keep admin bootstrap access out of normal deploy/start/stop/destroy command paths.
 
 The dedicated account is part of the safety model. The SFTP server should look and behave like an external server owned outside the consuming application account, keep billing separate, and keep EC2 create/destroy permissions out of unrelated project accounts.
@@ -78,7 +80,7 @@ Bootstrap approvals happen at phase boundaries. A human should approve inspect, 
 - Bash-compatible shell for repo scripts.
 - OpenSSH client tools, including `ssh` and `sftp`, for smoke testing.
 - Management-account or administrator AWS CLI access for the bootstrap lane that creates or configures the project AWS account and identity.
-- Project-scoped AWS operator identity with CloudFormation, EC2, IAM pass-role, SSM public parameter, and Secrets Manager permissions for routine testbed operation.
+- Project-scoped AWS operator identity with CloudFormation, EC2, SSM public parameter, SSM project connection parameter, and smoke-test permissions for routine testbed operation.
 - Java SDK, Graphviz, and the VS Code PlantUML extension for local diagram rendering.
 
 ## MVP Checklist
@@ -166,35 +168,35 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 - [x] Implement `scripts/stop.sh`.
 - [x] Implement `scripts/destroy.sh`.
 - [x] Implement `scripts/describe.sh`.
-- [ ] Implement `scripts/update-secret.sh`.
-- [ ] Implement `scripts/smoke-test.sh`.
-- [ ] Add consistent argument parsing in `scripts/lib/`.
-- [ ] Add required command checks for `aws`, `ssh`, `sftp`, and other runtime tools.
+- [x] Implement `scripts/update-parameter.sh`.
+- [x] Implement `scripts/smoke-test.sh`.
+- [x] Add consistent argument parsing in `scripts/lib/`.
+- [x] Add required command checks for `aws`, `ssh`, `sftp`, and other runtime tools.
 - [x] Add safe defaults and refusal messages for unsafe inputs.
 - [x] Redact sensitive values by default.
 - [x] Add `--show-sensitive` only where genuinely useful and clearly labeled.
 - [x] Ensure `describe.sh` prints current host, port, username, remote path, host key fingerprint, and stack/resource status without printing secrets.
 - [ ] Add bootstrap command surface only after its safety prompts, docs, and dry-run behavior are approved.
 
-### 7. Secrets Manager Integration
+### 7. Connection Parameter Publication
 
-- [ ] Choose an interim secret JSON schema.
-- [ ] Create or update a project-owned Secrets Manager secret.
-- [ ] Write current host/IP after deploy.
-- [ ] Refresh current host/IP after start.
-- [ ] Include `host`, `port`, `username`, `password`, `remotePath`, and host key fingerprint where supported.
-- [ ] Avoid logging full secret payloads.
-- [ ] Document how SimpleETL or another consumer should read the secret.
-- [ ] Keep the project-owned Secrets Manager secret by default when destroying runtime infrastructure.
-- [ ] Add an explicit opt-in path if secret deletion is ever supported.
-- [ ] Keep final schema open until SimpleETL's SFTP implementation settles.
+- [x] Choose an interim connection parameter JSON schema.
+- [x] Create or update a project-owned Parameter Store SecureString parameter.
+- [x] Write current host/IP after deploy.
+- [x] Refresh current host/IP after start.
+- [x] Include `host`, `port`, `username`, `password`, `remotePath`, and host key fingerprint where supported.
+- [x] Avoid logging full parameter payloads.
+- [x] Document how SimpleETL or another consumer should read the parameter.
+- [x] Delete the project-owned Parameter Store parameter by default when destroying runtime infrastructure.
+- [x] Add an explicit opt-in path if parameter preservation is ever needed.
+- [x] Keep final schema open until SimpleETL's SFTP implementation settles.
 
 ### 8. Source CIDR Discovery
 
-- [ ] Document that CloudFront is not the source of SFTP traffic.
-- [ ] Add guidance for determining the outbound source IP/CIDR for the relevant backend execution path.
-- [ ] Decide whether this repo should provide a helper command for CIDR discovery or only documentation.
-- [ ] Keep Lambda/NAT/EIP assumptions explicit and revisitable.
+- [x] Document that CloudFront is not the source of SFTP traffic.
+- [x] Add guidance for determining the outbound source IP/CIDR for the relevant backend execution path.
+- [x] Decide whether this repo should provide a helper command for CIDR discovery or only documentation.
+- [x] Keep Lambda/NAT/EIP assumptions explicit and revisitable.
 
 ### 9. Smoke Testing
 
@@ -213,7 +215,7 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 - [x] Implement stop only for preserving temporary state.
 - [x] Print the PRD-required stop warning about EBS and remaining resource costs.
 - [x] Ensure destroy deletes all CloudFormation-managed resources.
-- [x] Ensure destroy does not delete the durable project-owned Secrets Manager secret by default.
+- [x] Ensure destroy removes the runtime connection parameter by default while preserving durable AWS account access.
 - [x] Document how to confirm stack deletion.
 - [x] Document expected behavior when restarting after dynamic public IP changes.
 
@@ -235,8 +237,8 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 - [ ] Whether bootstrap creates a new AWS Organizations member account or only documents that step for the human owner.
 - [ ] Whether routine access should use IAM Identity Center, an IAM role, or an IAM user.
 - [ ] Whether bootstrap scripts belong under `scripts/bootstrap/` or a separate top-level `bootstrap/` directory.
-- [ ] Final Secrets Manager JSON schema.
-- [ ] Whether consumers call this a Secret Keeper integration or a direct AWS Secrets Manager integration.
+- [ ] Final connection parameter JSON schema.
+- [ ] Whether consumers call this a Secret Keeper integration or a direct Parameter Store integration.
 - [ ] Whether host key validation is required in MVP.
 - [ ] Whether there is one `remotePath` or separate source/destination paths.
 - [ ] Whether consuming systems delete remote files after ingestion.
@@ -254,7 +256,7 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 - No long-term file retention.
 - No vendor-specific SFTP quirks in MVP.
 - No permanent public endpoint.
-- No dependency on SimpleETL internals beyond the secret schema and expected directory behavior.
+- No dependency on SimpleETL internals beyond the connection parameter schema and expected directory behavior.
 
 ## Future Enhancements
 
@@ -281,9 +283,9 @@ The MVP is complete when:
 - [ ] High-privilege bootstrap docs/scripts can guide creation of the project account and operator identity from the CLI with explicit human approval gates.
 - [ ] The testbed can be deployed from the command line.
 - [ ] The security group allows only the intended SFTP source CIDR unless explicit temporary public-open override is used.
-- [ ] Secrets Manager contains current host/IP and credentials after deploy/start.
+- [ ] Parameter Store contains current host/IP and credentials after deploy/start.
 - [ ] A smoke test proves connect, upload, list, download, delete, and empty-directory behavior.
 - [ ] Destroy tears down all runtime resources.
-- [ ] Destroy preserves the durable project-owned secret unless an explicit future opt-in deletion path is approved.
+- [ ] Destroy removes the runtime connection parameter and tears down all CloudFormation-managed resources.
 - [ ] Documentation describes setup, use, cost posture, safety defaults, and cleanup.
 - [ ] Public sanitization and sandbox-safe verification pass.

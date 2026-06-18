@@ -17,7 +17,13 @@ Use:
 - EC2
 - Amazon Linux 2023
 - OpenSSH `internal-sftp`
-- AWS Secrets Manager
+- AWS Systems Manager Parameter Store
+
+## Connection Detail Publication
+
+The MVP publishes current SFTP connection details to AWS Systems Manager Parameter Store as a `SecureString` parameter. Parameter Store standard parameters fit this disposable testbed because the project rotates credentials by redeploying the runtime stack rather than maintaining long-lived rotated secrets.
+
+AWS Secrets Manager remains a future option if managed credential rotation becomes a requirement, but it is not the default for MVP connection publication because this testbed should avoid durable paid secret resources when a short-lived encrypted parameter is sufficient.
 
 Do not use by default:
 
