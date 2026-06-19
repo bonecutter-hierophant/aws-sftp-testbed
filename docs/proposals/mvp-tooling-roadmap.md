@@ -286,12 +286,12 @@ Durable version planning now lives in `docs/specs/sftp-testbed-version-spec.md`.
 
 The MVP is complete when:
 
-- [ ] High-privilege bootstrap docs/scripts can guide creation of the project account and operator identity from the CLI with explicit human approval gates.
-- [ ] The testbed can be deployed from the command line.
-- [ ] The security group allows only the intended SFTP source CIDR unless explicit temporary public-open override is used.
-- [ ] Parameter Store contains current host/IP and credentials after deploy/start.
+- [x] High-privilege bootstrap docs/scripts can guide creation of the project account and operator identity from the CLI with explicit human approval gates.
+- [x] The testbed can be deployed from the command line.
+- [x] The security group allows only the intended SFTP source CIDR unless explicit temporary public-open override is used.
+- [x] Parameter Store contains current host/IP and credentials after deploy/start.
 - [x] A smoke test proves connect, upload, list, download, delete, and empty-directory behavior.
-- [ ] Destroy tears down all runtime resources.
-- [ ] Destroy removes the runtime connection parameter and tears down all CloudFormation-managed resources.
-- [ ] Documentation describes setup, use, cost posture, safety defaults, and cleanup.
+- [x] Destroy tears down all runtime resources.
+- [x] Destroy removes the runtime connection parameter and tears down all CloudFormation-managed resources.
+- [x] Documentation describes setup, use, cost posture, safety defaults, and cleanup.
 - [x] Public sanitization and sandbox-safe verification pass.
