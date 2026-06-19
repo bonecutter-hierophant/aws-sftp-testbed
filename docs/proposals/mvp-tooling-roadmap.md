@@ -23,14 +23,14 @@ The proposal intentionally treats safety as part of the user experience. A usefu
 - SFTP server: Amazon Linux 2023 with OpenSSH `internal-sftp`.
 - Connection publication behavior: update AWS Systems Manager Parameter Store after deploy/start.
 - Auth MVP: username and password.
-- Auth bonus: SSH key support.
+- Auth future option: SSH public-key support after key material handling is designed.
 - Remote path MVP: `/data`.
 - Lifecycle default: destroy when testing is complete.
 - Network safety: required `AllowedCidr`.
 - Public-open override: explicit temporary flag only.
-- SimpleETL coupling: loose connection parameter schema contract for now.
+- SimpleETL coupling: connection parameter schema v1 with no dependency on SimpleETL internals.
 
-Connection publication decision: use SSM Parameter Store `SecureString` for the MVP because standard parameters fit the low-cost disposable testbed model. Do not use Secrets Manager by default unless a future managed-rotation feature is reviewed and approved.
+Connection publication decision: use SSM Parameter Store `SecureString` for the MVP because standard parameters fit the low-cost disposable testbed model. Document the consumer side generically as "store the connection secret in a secret store appropriate to your project" rather than as a branded Secret Keeper requirement. Do not use Secrets Manager by default unless a future managed-rotation feature is reviewed and approved.
 
 ## Public-Repo Safety Notes
 
@@ -63,7 +63,7 @@ Review notes:
 ## Privilege Sequence
 
 1. Use existing admin/management-account AWS CLI access only for bootstrap.
-2. Create a dedicated AWS Organizations member account for this project, documented with a public-safe name such as `aws-sftp-server`.
+2. Create or confirm a dedicated AWS Organizations member account for this project as a human-owned setup step, documented with a public-safe name such as `aws-sftp-server`.
 3. Create the project-scoped IAM Identity Center permission set for this SFTP server account, documented with a public-safe name such as `AwsSftpServer-Operator`.
 4. Verify the project-scoped identity can assume or access only the intended project account.
 5. Switch local routine commands to the project-scoped profile or role.
@@ -111,15 +111,17 @@ Bootstrap approvals happen at phase boundaries. A human should approve inspect, 
 - [x] Separate bootstrap credentials from routine operator credentials in docs and scripts.
 - [x] Document local AWS profile setup without committing real profile names.
 - [x] Store only sanitized bootstrap examples in the repo.
-- [x] Decide whether account bootstrap scripts live under `scripts/bootstrap/` or a separate top-level `bootstrap/` directory.
+- [x] Decide that account bootstrap scripts live under top-level `bootstrap/`.
 - [x] Document rollback/cleanup limits for AWS account creation, including operations that cannot be treated as disposable.
 
 Bootstrap decisions baked into implementation:
 
-- Create a new AWS Organizations member account rather than attaching runtime permissions to an existing development account.
+- Use a dedicated AWS Organizations member account rather than attaching runtime permissions to an existing development account.
+- Treat AWS account creation, root-account access, account email ownership, billing setup, and multi-factor authentication as human-owned prerequisites. Bootstrap tooling may guide or inspect this work, and advanced helpers may exist behind explicit approval gates, but routine project tooling should assume the account already exists.
 - Use `aws-sftp-server` as the public-safe account name in docs and examples.
-- Use IAM Identity Center for routine operator access.
+- Use IAM Identity Center for routine operator access. Treat direct IAM users or IAM roles as legacy/transitional bootstrap access only unless a reviewed follow-up has a specific reason to use them.
 - Use `AwsSftpServer-Operator` as the public-safe permission set name in docs and examples.
+- Keep one-time setup helpers and walkthroughs in top-level `bootstrap/`; keep routine SFTP server lifecycle commands in `scripts/`.
 - Do not add a read-only role for MVP unless a reviewed follow-up needs it.
 - Use phase-level approval gates: inspect, report, then approve a bounded create or assignment phase.
 
@@ -182,6 +184,7 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 ### 7. Connection Parameter Publication
 
 - [x] Choose an interim connection parameter JSON schema.
+- [x] Promote the connection parameter schema to v1 with `schemaVersion` and `protocol`.
 - [x] Create or update a project-owned Parameter Store SecureString parameter.
 - [x] Write current host/IP after deploy.
 - [x] Refresh current host/IP after start.
@@ -190,7 +193,7 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 - [x] Document how SimpleETL or another consumer should read the parameter.
 - [x] Delete the project-owned Parameter Store parameter by default when destroying runtime infrastructure.
 - [x] Add an explicit opt-in path if parameter preservation is ever needed.
-- [x] Keep final schema open until SimpleETL's SFTP implementation settles.
+- [x] Finalize the MVP schema as v1 while keeping future additive fields reviewable.
 
 ### 8. Source CIDR Discovery
 
@@ -235,17 +238,17 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 
 ## Open Decisions
 
-- [ ] Whether bootstrap creates a new AWS Organizations member account or only documents that step for the human owner.
-- [ ] Whether routine access should use IAM Identity Center, an IAM role, or an IAM user.
-- [ ] Whether bootstrap scripts belong under `scripts/bootstrap/` or a separate top-level `bootstrap/` directory.
-- [ ] Final connection parameter JSON schema.
-- [ ] Whether consumers call this a Secret Keeper integration or a direct Parameter Store integration.
-- [ ] Whether host key validation is required in MVP.
-- [ ] Whether there is one `remotePath` or separate source/destination paths.
-- [ ] Whether consuming systems delete remote files after ingestion.
-- [ ] Whether consuming systems move processed files to archive.
-- [ ] Whether password-only, key-only, or both are needed beyond MVP.
-- [ ] Whether backend egress is stable through NAT/EIP or discovered dynamically per run.
+- [x] AWS account creation is a human-owned bootstrap prerequisite. Document the step, account email requirement, billing/root/MFA responsibilities, and optional agent prompt guidance; do not treat full account creation as routine project automation.
+- [x] Routine access should use IAM Identity Center: organization, member account, project permission set, account assignment, and local SSO-backed AWS CLI profile. Direct IAM users or IAM roles are bootstrap-only or legacy/transitional access paths, not the preferred routine workflow.
+- [x] Bootstrap setup belongs in top-level `bootstrap/` with its own README, scripts, and walkthrough. Routine SFTP server lifecycle commands stay in `scripts/`.
+- [x] Final connection parameter JSON schema for MVP: `schemaVersion`, `protocol`, `host`, `publicIp`, `port`, `username`, `password`, `remotePath`, `hostKeyFingerprints`, and `projectName`.
+- [x] Consumer secret-store wording: document this generically as a connection secret that should live in a secret store the consumer trusts. This repo publishes to Parameter Store by default; consumers may use Parameter Store, Secrets Manager, another vault, or a controlled local-only development store, but should avoid source-controlled files and casual `.env` workflows for live credentials.
+- [x] Host key validation is recommended but not required in MVP. Publish `hostKeyFingerprints`, recommend comparing client prompts when practical, and document Parameter Store-based manual validation as the primary MVP check for host, credentials, and remote path.
+- [x] Use one `remotePath` for MVP. Add separate semantic paths such as inbox, archive, or error folders later only if a consuming workflow needs them.
+- [x] Consumer file lifecycle is outside this tool's MVP contract. The default SFTP account supports read, write, and delete access; consumers decide whether to delete, archive, move, or preserve remote files.
+- [x] Archive or processed-file movement is consumer-owned behavior. Add dedicated paths or stricter test fixtures later only if a consuming workflow needs them.
+- [x] Password authentication is the MVP default. SSH public-key authentication is a future enhancement because it is common for SFTP, but key generation, storage, publication, rotation, and cleanup should be designed explicitly before implementation.
+- [x] Assume the SFTP client has a stable or known outbound source CIDR for MVP. Operators provide `AllowedCidr`; dynamic egress discovery is optional troubleshooting, not a normal deploy feature.
 
 ## Explicit Non-Goals
 
@@ -260,6 +263,8 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 - No dependency on SimpleETL internals beyond the connection parameter schema and expected directory behavior.
 
 ## Future Enhancements
+
+Durable version planning now lives in `docs/specs/sftp-testbed-version-spec.md`. The list below is retained as the original MVP proposal backlog; promote future work through the spec and a reviewed proposal before implementation.
 
 - [ ] Scheduled start/test/stop workflow.
 - [ ] GitHub Actions workflow.

@@ -14,6 +14,13 @@ const requiredFiles = [
   ".vscode/settings.json",
   ".vscode/tasks.json",
   "package.json",
+  "bootstrap/README.md",
+  "bootstrap/walkthrough.md",
+  "bootstrap/scripts/assign-permission-set.sh",
+  "bootstrap/scripts/configure-routine-profile.sh",
+  "bootstrap/scripts/create-account.sh",
+  "bootstrap/scripts/ensure-permission-set.sh",
+  "bootstrap/scripts/inspect.sh",
   "docs/architecture/README.md",
   "docs/architecture/project-structure.md",
   "docs/architecture/testbed-lifecycle.puml",
@@ -26,16 +33,12 @@ const requiredFiles = [
   "docs/operations/sandbox-safe-verification.md",
   "docs/operations/scoped-verification-gates.md",
   "docs/proposals/mvp-tooling-roadmap.md",
+  "docs/specs/README.md",
+  "docs/specs/sftp-testbed-version-spec.md",
   "infra/README.md",
   "infra/cloudformation/README.md",
   "infra/cloudformation/template.yaml",
   "scripts/README.md",
-  "scripts/bootstrap/README.md",
-  "scripts/bootstrap/assign-permission-set.sh",
-  "scripts/bootstrap/configure-routine-profile.sh",
-  "scripts/bootstrap/create-account.sh",
-  "scripts/bootstrap/ensure-permission-set.sh",
-  "scripts/bootstrap/inspect.sh",
   "scripts/lib/README.md",
   "scripts/lib/common.sh",
   "scripts/login.sh",
@@ -65,7 +68,7 @@ for (const filePath of requiredFiles) {
   }
 }
 
-for (const directoryPath of [".vscode", "docs", "docs/proposals", "infra", "scripts", "scripts/bootstrap", "scripts/lib", "tools"]) {
+for (const directoryPath of [".vscode", "bootstrap", "bootstrap/scripts", "docs", "docs/proposals", "docs/specs", "infra", "scripts", "scripts/lib", "tools"]) {
   if (!existsSync(join(repoRoot, directoryPath))) {
     failures.push(`${directoryPath}/ is missing`);
   }

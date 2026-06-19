@@ -102,6 +102,8 @@ fi
 
 parameter_json="$(cat <<JSON
 {
+  "schemaVersion": 1,
+  "protocol": "sftp",
   "host": "$(json_escape "$host")",
   "publicIp": "$(json_escape "$public_ip")",
   "port": $port,

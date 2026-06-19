@@ -18,7 +18,9 @@ for (const filePath of readShellFiles()) {
     failures.push(`${filePath} must enable set -euo pipefail`);
   }
 
-  const sourcesCommonHelper = content.includes("source \"$script_dir/lib/common.sh\"") || content.includes("source \"$script_dir/../lib/common.sh\"");
+  const sourcesCommonHelper = content.includes("source \"$script_dir/lib/common.sh\"")
+    || content.includes("source \"$script_dir/../lib/common.sh\"")
+    || content.includes("source \"$script_dir/../../scripts/lib/common.sh\"");
   if (filePath.startsWith("scripts/") && filePath !== "scripts/lib/common.sh" && !sourcesCommonHelper) {
     failures.push(`${filePath} must source scripts/lib/common.sh`);
   }

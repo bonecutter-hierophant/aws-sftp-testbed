@@ -8,29 +8,29 @@ const failures = [];
 
 const bootstrapScripts = [
   {
-    file: "scripts/bootstrap/inspect.sh",
+    file: "bootstrap/scripts/inspect.sh",
     mutatesAws: false
   },
   {
-    file: "scripts/bootstrap/create-account.sh",
+    file: "bootstrap/scripts/create-account.sh",
     mutatesAws: true,
     approvalFlag: "--approve-create-account",
     requiredAwsCalls: ["organizations create-account"]
   },
   {
-    file: "scripts/bootstrap/ensure-permission-set.sh",
+    file: "bootstrap/scripts/ensure-permission-set.sh",
     mutatesAws: true,
     approvalFlag: "--approve-permission-set",
     requiredAwsCalls: ["sso-admin put-inline-policy-to-permission-set"]
   },
   {
-    file: "scripts/bootstrap/assign-permission-set.sh",
+    file: "bootstrap/scripts/assign-permission-set.sh",
     mutatesAws: true,
     approvalFlag: "--approve-assignment",
     requiredAwsCalls: ["sso-admin create-account-assignment"]
   },
   {
-    file: "scripts/bootstrap/configure-routine-profile.sh",
+    file: "bootstrap/scripts/configure-routine-profile.sh",
     mutatesAws: false,
     approvalFlag: "--approve-local-profile"
   }

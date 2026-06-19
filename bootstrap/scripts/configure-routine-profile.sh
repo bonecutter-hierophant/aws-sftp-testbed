@@ -2,8 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../lib/common.sh
-source "$script_dir/../lib/common.sh"
+# shellcheck source=../../scripts/lib/common.sh
+source "$script_dir/../../scripts/lib/common.sh"
 
 bootstrap_selected="false"
 approved_local_profile="false"
@@ -17,7 +17,7 @@ sso_session="${AWS_SFTP_SSO_SESSION:-}"
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/bootstrap/configure-routine-profile.sh --bootstrap --approve-local-profile [options]
+  bootstrap/scripts/configure-routine-profile.sh --bootstrap --approve-local-profile [options]
 
 Create or update the local AWS CLI profile used for routine SFTP server
 operation. This command writes local AWS CLI configuration and reads AWS

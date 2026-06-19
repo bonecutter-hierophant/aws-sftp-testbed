@@ -6,11 +6,11 @@ This project should use durable, project-scoped AWS access for disposable infras
 
 The structure matters because account setup and SFTP runtime setup have different risk profiles. Creating an AWS account, identity, and permission set is durable administrative work. Starting an EC2 SFTP testbed is routine runtime work. The tooling should make that distinction hard to miss.
 
-The AWS account, IAM principal, local AWS profile, and related access setup can remain available for future testbed use. The SFTP EC2 instance and CloudFormation-managed runtime resources should be temporary and destroyed when testing is complete.
+The AWS account, IAM Identity Center assignment, local AWS profile, and related access setup can remain available for future testbed use. The SFTP EC2 instance and CloudFormation-managed runtime resources should be temporary and destroyed when testing is complete.
 
 ## Bootstrap Vs Routine Operation
 
-Bootstrap uses elevated access by design. It may require management-account or administrator credentials to create or configure a new AWS account, identity, role, permission set, or policy. Bootstrap commands must be explicit, human-approved, and dry-run documented before they perform live AWS changes.
+Bootstrap uses elevated access by design. It may require management-account or administrator credentials to inspect AWS Organizations, confirm the project account, or configure an identity, role, permission set, or policy. Creating the AWS account itself is a human-owned prerequisite because account email ownership, root-account access, billing posture, and multi-factor authentication cannot be safely treated as routine automation. Bootstrap commands must be explicit, human-approved, and dry-run documented before they perform live AWS changes.
 
 Routine operation should use narrower project-scoped access that can deploy, start, stop, describe, smoke-test, update connection parameters for, and destroy this project's SFTP runtime resources without retaining account-creation authority.
 
@@ -19,8 +19,8 @@ This is the ratchet: use elevated access to create the safer operating lane, the
 The approved privilege sequence is:
 
 1. Use admin/management-account AWS CLI access for bootstrap only.
-1. Create or configure the project AWS account.
-1. Create the project-scoped identity and permission set.
+1. Create or confirm the project AWS account as a human-owned setup step.
+1. Create the project-scoped IAM Identity Center permission set and account assignment.
 1. Validate that the new project-scoped access works inside the project account.
 1. Switch routine commands to the project-scoped profile or role.
 1. Use the project-scoped access for EC2, CloudFormation, Systems Manager Parameter Store, and SFTP smoke-test operations.
@@ -28,9 +28,11 @@ The approved privilege sequence is:
 
 ## Access Model
 
-Use a dedicated AWS identity for this project instead of sharing broader personal, SimpleETL, or Bonecutters deployment credentials.
+Use IAM Identity Center as the preferred routine access model for this project. The expected shape is an AWS Organization with a dedicated member account, a project-scoped permission set, and an account assignment that lets the operator sign in to the project account through one central AWS access portal.
 
-The identity should be scoped to:
+Use a dedicated project assignment instead of sharing broader personal, SimpleETL, or Bonecutters deployment credentials.
+
+The permission set should be scoped to:
 
 - deploy, update, describe, and delete this project's CloudFormation stack
 - create, tag, describe, start, stop, and terminate only this project's EC2 resources
@@ -39,17 +41,17 @@ The identity should be scoped to:
 - pass only the IAM role required by the EC2 instance profile
 - read the SSM public AMI parameter for Amazon Linux 2023
 
-The identity should not have broad administrator access after setup. If bootstrap work needs elevated permissions, keep that separate from the normal testbed operator identity.
+The routine assignment should not have broad administrator access after setup. If bootstrap work needs elevated permissions, keep that separate from the normal testbed operator identity.
 
 ## Existing Access Context
 
-Some environments may have a pre-existing management-account IAM user or role for administrative bootstrap tasks. That is acceptable for bootstrap only, as long as the boundary stays explicit:
+Some environments may have a pre-existing management-account IAM user or role for administrative bootstrap tasks. Treat that as legacy or transitional bootstrap access, not the preferred routine model. It is acceptable for bootstrap only, as long as the boundary stays explicit:
 
 - the management-account IAM principal is used to create or configure the project account and Identity Center assignment
 - the routine SFTP server work switches to the IAM Identity Center identity assigned to the project account
 - normal deploy, start, stop, destroy, describe, parameter-update, and smoke-test commands do not use the management-account bootstrap principal
 
-An operator may have both an IAM principal and an IAM Identity Center identity. Treat those as separate access paths even when they represent the same person or team.
+An operator may have both an IAM principal and an IAM Identity Center identity. Treat those as separate access paths even when they represent the same person or team. Routine project commands should use the IAM Identity Center profile.
 
 Local AWS profile names are private operator configuration. To rediscover them on a workstation, use:
 
@@ -65,8 +67,8 @@ Durable:
 
 - AWS account or client relationship
 - bootstrap documentation and scripts, when approved
-- project-scoped IAM user or role
-- optional IAM Identity Center permission set or account assignment
+- project-scoped IAM Identity Center permission set or account assignment
+- legacy IAM user or role used only for approved bootstrap access, if an environment already depends on one
 - local AWS profile name kept outside source control
 - project permissions policy
 - optional project-owned connection parameter name
@@ -123,7 +125,7 @@ The first implementation pass should add a public-safe IAM policy template or ch
 The preferred bootstrap model for this repository is:
 
 1. Use management-account access only for the bootstrap lane.
-1. Create a dedicated AWS Organizations member account for this project so billing, ownership, and resource risk stay separate from other development projects.
+1. Create or confirm a dedicated AWS Organizations member account for this project so billing, ownership, and resource risk stay separate from other development projects. Treat account creation, root access, billing setup, and multi-factor authentication as human-owned prerequisites.
 1. Use a public-safe account name such as `aws-sftp-server` when documenting the workflow.
 1. Create or update a public-safe IAM Identity Center permission set such as `AwsSftpServer-Operator`.
 1. Assign that permission set to the existing operator identity for the project account.
@@ -143,21 +145,23 @@ Bootstrap commands should run in phases:
 
 Human approval should happen at clear phase boundaries, not for every individual AWS API call inside an approved phase. For example, the inspect phase can be approved once, then the script reports current state. A later create phase should print the account, permission set, assignment, and validation work it intends to perform, then ask for one explicit approval before running that bounded sequence.
 
-The first implemented bootstrap command is `scripts/bootstrap/inspect.sh`. It is read-only, contacts AWS, and refuses to run unless the caller passes `--bootstrap`.
+The first implemented bootstrap command is `bootstrap/scripts/inspect.sh`. It is read-only, contacts AWS, and refuses to run unless the caller passes `--bootstrap`.
 
-The account creation command is `scripts/bootstrap/create-account.sh`. It creates the dedicated AWS Organizations member account, defaults the account name to `aws-sftp-server`, defaults the Organizations access role name to `OrganizationAccountAccessRole`, and polls the asynchronous account creation request. It refuses to run unless the caller passes both `--bootstrap` and `--approve-create-account`.
+The public setup path treats account creation as a human-owned step. The account needs a unique email address, working account ownership, billing visibility, root-account recovery access, and multi-factor authentication. A monitored forwarding address or alias is acceptable for the account email if it reliably reaches the responsible owner.
+
+The optional account creation helper is `bootstrap/scripts/create-account.sh`. It is for advanced operators who have already reviewed the account-creation implications and want a gated CLI aid for creating the dedicated AWS Organizations member account. It defaults the account name to `aws-sftp-server`, defaults the Organizations access role name to `OrganizationAccountAccessRole`, polls the asynchronous account creation request, and refuses to run unless the caller passes both `--bootstrap` and `--approve-create-account`. It does not replace the human responsibility to complete root-account, email, billing, and MFA setup.
 
 AWS Organizations creates the named cross-account access role in the new member account during account creation. Bootstrap uses that role only to complete account setup and validate the lower-privilege operating lane. Routine testbed commands should use the project-scoped IAM Identity Center assignment instead.
 
-The permission set command is `scripts/bootstrap/ensure-permission-set.sh`. It creates or updates the public-safe `AwsSftpServer-Operator` permission set and installs an inline policy for routine CloudFormation, EC2, SSM public AMI parameter reads, project connection parameter writes, and caller-identity operations needed by this project. It refuses to run unless the caller passes both `--bootstrap` and `--approve-permission-set`.
+The permission set command is `bootstrap/scripts/ensure-permission-set.sh`. It creates or updates the public-safe `AwsSftpServer-Operator` permission set and installs an inline policy for routine CloudFormation, EC2, SSM public AMI parameter reads, project connection parameter writes, and caller-identity operations needed by this project. It refuses to run unless the caller passes both `--bootstrap` and `--approve-permission-set`.
 
-The assignment command is `scripts/bootstrap/assign-permission-set.sh`. It assigns the project permission set to the operator IAM Identity Center user for the project account and polls the asynchronous assignment request. It refuses to run unless the caller passes both `--bootstrap` and `--approve-assignment`.
+The assignment command is `bootstrap/scripts/assign-permission-set.sh`. It assigns the project permission set to the operator IAM Identity Center user for the project account and polls the asynchronous assignment request. It refuses to run unless the caller passes both `--bootstrap` and `--approve-assignment`.
 
 The routine login command is `scripts/login.sh`. It signs in the local AWS CLI profile for routine operation through IAM Identity Center, verifies that the profile is configured for the expected project permission set, and prints the resulting caller identity for review. It defaults to `aws-sftp-server-operator`, or the `AWS_SFTP_SERVER_PROFILE` environment variable when set. It does not create AWS resources.
 
 The routine validation command is `scripts/validate-routine-access.sh`. It confirms the routine profile caller identity and checks that AWS Organizations bootstrap access is denied.
 
-The local profile setup command is `scripts/bootstrap/configure-routine-profile.sh`. It writes the routine AWS CLI profile using the project account discovered from AWS Organizations, the project permission set name, and an existing local AWS CLI SSO session. When a bootstrap profile is not provided, it discovers a signed-in local profile with AWS Organizations access. It writes only local AWS configuration and refuses to run unless the caller passes both `--bootstrap` and `--approve-local-profile`.
+The local profile setup command is `bootstrap/scripts/configure-routine-profile.sh`. It writes the routine AWS CLI profile using the project account discovered from AWS Organizations, the project permission set name, and an existing local AWS CLI SSO session. When a bootstrap profile is not provided, it discovers a signed-in local profile with AWS Organizations access. It writes only local AWS configuration and refuses to run unless the caller passes both `--bootstrap` and `--approve-local-profile`.
 
 ## Permission Guidance
 
@@ -188,7 +192,7 @@ Routine operator permissions should not include:
 
 A committed sanitized IAM policy template should be added only after the CloudFormation template and runtime resource names are implemented. Until then, keep the public documentation at the permission-category level and keep any live policy output out of source control.
 
-Connection details are published to Systems Manager Parameter Store as a `SecureString` parameter. Secrets Manager is intentionally not the MVP default because managed rotation is not part of the disposable testbed credential model. Prefer destroy and redeploy for testbed credential rotation unless a future reviewed feature adds managed rotation.
+Connection details are published by this tool to Systems Manager Parameter Store as a `SecureString` parameter. Consumers may copy or sync the payload into whatever secret store they are comfortable operating, but they should not treat source-controlled files or casual `.env` workflows as safe places for live credentials. Secrets Manager is intentionally not the MVP default because managed rotation is not part of the disposable testbed credential model. Prefer destroy and redeploy for testbed credential rotation unless a future reviewed feature adds managed rotation.
 
 ## Setup Guide
 
@@ -199,7 +203,8 @@ Before starting:
 - Sign in locally with management-account access that can use AWS Organizations and IAM Identity Center.
 - Confirm IAM Identity Center is enabled for the organization.
 - Confirm the intended operator user exists in IAM Identity Center.
-- Choose an email address for the new AWS account. AWS requires a unique email address for each account. A forwarding address or alias that reaches the responsible owner is acceptable if it can receive AWS account mail.
+- Create or confirm the dedicated project AWS account as the human account owner. AWS requires a unique email address for each account. A forwarding address or alias that reaches the responsible owner is acceptable if it can receive AWS account mail.
+- Complete root-account recovery and multi-factor authentication setup for the dedicated account outside this repository's normal command workflow.
 - Keep the real account email, account IDs, IAM Identity Center identifiers, local profile names, and command output out of source control.
 
 Target structure:
@@ -217,7 +222,7 @@ AWS Organizations
 Setup steps:
 
 1. Inspect the management account, organization accounts, and IAM Identity Center instance.
-1. Create the dedicated `aws-sftp-server` AWS Organizations member account.
+1. Create or confirm the dedicated `aws-sftp-server` AWS Organizations member account as a human-owned prerequisite.
 1. Create or update the `AwsSftpServer-Operator` IAM Identity Center permission set.
 1. Assign `AwsSftpServer-Operator` to the operator user for the `aws-sftp-server` account.
 1. Configure the local routine AWS CLI profile.
@@ -228,7 +233,6 @@ Command sequence:
 
 ```text
 npm run bootstrap:inspect -- --bootstrap --profile <local-admin-profile>
-npm run bootstrap:create-account -- --bootstrap --approve-create-account --profile <local-admin-profile> --account-email <account-email>
 npm run bootstrap:ensure-permission-set -- --bootstrap --approve-permission-set --profile <local-admin-profile>
 npm run bootstrap:assign-permission-set -- --bootstrap --approve-assignment --profile <local-admin-profile> --operator-username <operator-username>
 npm run bootstrap:configure-profile
@@ -238,11 +242,16 @@ npm run validate:routine-access
 
 After setup, routine SFTP testbed commands should use the routine profile path, not the management-account bootstrap path.
 
-Preferred invocation:
+Optional account-creation aid for advanced operators who have explicit approval to create the account from AWS Organizations:
+
+```text
+npm run bootstrap:create-account -- --bootstrap --approve-create-account --profile <local-admin-profile> --account-email <account-email>
+```
+
+Preferred invocation after the dedicated account exists:
 
 ```text
 npm run bootstrap:inspect -- --bootstrap --profile <local-admin-profile>
-npm run bootstrap:create-account -- --bootstrap --approve-create-account --profile <local-admin-profile> --account-email <account-email>
 npm run bootstrap:ensure-permission-set -- --bootstrap --approve-permission-set --profile <local-admin-profile>
 npm run bootstrap:assign-permission-set -- --bootstrap --approve-assignment --profile <local-admin-profile> --operator-username <operator-username>
 npm run bootstrap:configure-profile
@@ -253,13 +262,18 @@ npm run validate:routine-access
 Windows operators can call Git Bash directly if local npm shell resolution chooses a non-working Bash path:
 
 ```text
-& 'C:\Program Files\Git\bin\bash.exe' scripts/bootstrap/inspect.sh --bootstrap --profile <local-admin-profile>
-& 'C:\Program Files\Git\bin\bash.exe' scripts/bootstrap/create-account.sh --bootstrap --approve-create-account --profile <local-admin-profile> --account-email <account-email>
-& 'C:\Program Files\Git\bin\bash.exe' scripts/bootstrap/ensure-permission-set.sh --bootstrap --approve-permission-set --profile <local-admin-profile>
-& 'C:\Program Files\Git\bin\bash.exe' scripts/bootstrap/assign-permission-set.sh --bootstrap --approve-assignment --profile <local-admin-profile> --operator-username <operator-username>
-& 'C:\Program Files\Git\bin\bash.exe' scripts/bootstrap/configure-routine-profile.sh --bootstrap --approve-local-profile
+& 'C:\Program Files\Git\bin\bash.exe' bootstrap/scripts/inspect.sh --bootstrap --profile <local-admin-profile>
+& 'C:\Program Files\Git\bin\bash.exe' bootstrap/scripts/ensure-permission-set.sh --bootstrap --approve-permission-set --profile <local-admin-profile>
+& 'C:\Program Files\Git\bin\bash.exe' bootstrap/scripts/assign-permission-set.sh --bootstrap --approve-assignment --profile <local-admin-profile> --operator-username <operator-username>
+& 'C:\Program Files\Git\bin\bash.exe' bootstrap/scripts/configure-routine-profile.sh --bootstrap --approve-local-profile
 & 'C:\Program Files\Git\bin\bash.exe' scripts/login.sh
 & 'C:\Program Files\Git\bin\bash.exe' scripts/validate-routine-access.sh
 ```
 
 The profile name, account email, and operator username are local-only context and should not be committed.
+
+Optional agent prompt for account-access bootstrap:
+
+```text
+Help me set up aws-sftp-testbed access from a management account. First inspect the current AWS Organizations and IAM Identity Center state and report what exists without making changes. Treat AWS account creation as a human-owned prerequisite: confirm the dedicated project account name, account email ownership, billing visibility, root recovery access, and MFA status. After I explicitly approve, create or update only the project IAM Identity Center permission set and account assignment needed for the routine operator profile. Do not commit account IDs, ARNs, emails, local profile names, credentials, or live command output.
+```

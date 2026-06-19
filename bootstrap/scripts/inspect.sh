@@ -2,8 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../lib/common.sh
-source "$script_dir/../lib/common.sh"
+# shellcheck source=../../scripts/lib/common.sh
+source "$script_dir/../../scripts/lib/common.sh"
 
 bootstrap_selected="false"
 sso_region="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-1}}"
@@ -12,7 +12,7 @@ aws_args=()
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/bootstrap/inspect.sh --bootstrap [--profile <profile>] [--sso-region <region>]
+  bootstrap/scripts/inspect.sh --bootstrap [--profile <profile>] [--sso-region <region>]
 
 Read-only bootstrap discovery. This command contacts AWS and prints current
 caller, AWS Organizations, and IAM Identity Center visibility for review.

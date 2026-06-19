@@ -59,7 +59,8 @@ For meaningful features, commit the approved proposal before implementation. The
 ## Implementation Rules
 
 - Keep implementation inside the approved scope.
-- Keep user-facing command entrypoints in `scripts/`.
+- Keep routine user-facing command entrypoints in `scripts/`.
+- Keep one-time AWS account and IAM Identity Center setup helpers in `bootstrap/`.
 - Keep shared shell helpers in `scripts/lib/`.
 - Keep deployable infrastructure in `infra/cloudformation/`.
 - Keep docs close to the code or workflow that owns the behavior.

@@ -23,11 +23,27 @@ Use:
 
 The MVP publishes current SFTP connection details to AWS Systems Manager Parameter Store as a `SecureString` parameter. Parameter Store standard parameters fit this disposable testbed because the project rotates credentials by redeploying the runtime stack rather than maintaining long-lived rotated secrets.
 
+Consumers should treat the published payload as a secret and store it wherever their project normally stores sensitive connection details. That may be Parameter Store, AWS Secrets Manager, another managed vault, or a local-only development store with clear handling rules. Avoid source-controlled files and casual `.env` workflows for live credentials; they are easy to leak through logs, screenshots, cloud tooling, and agent-assisted development.
+
 AWS Secrets Manager remains a future option if managed credential rotation becomes a requirement, but it is not the default for MVP connection publication because this testbed should avoid durable paid secret resources when a short-lived encrypted parameter is sufficient.
 
 Parameter Store names must not start with provider-reserved prefixes such as `aws` or `ssm`. Put the project or domain namespace first. The default connection parameter path is `/sftp-testbed/aws-sftp-server/connection`, not `/aws-sftp-server/connection`.
 
 Use this naming convention for new AWS-owned names and paths where provider-reserved prefixes might apply: start with a neutral project namespace such as `sftp-testbed`, then add the specific resource or account label.
+
+## Manual Endpoint Validation
+
+For MVP manual testing, fetch the connection payload directly from Parameter Store using authenticated project access, then use those values from the machine that will run the SFTP client. This proves the test is using the connection details the tool published rather than copied local notes.
+
+Validate:
+
+- the server answers at the published `host` or `publicIp`
+- TCP port `22` is reachable from the client source network
+- the published `username` and `password` authenticate successfully
+- the published `remotePath` is visible and writable as expected
+- bad usernames or passwords fail
+
+The payload includes `hostKeyFingerprints` so clients can compare the SSH host key prompt when practical. This is recommended for MVP but not mandatory. The value is discovered through the testbed tooling and should be treated as testbed trust-on-first-use, not a production certificate chain. Destroying and rebuilding the server creates new host keys; stopping and starting the same instance should preserve them.
 
 Do not use by default:
 

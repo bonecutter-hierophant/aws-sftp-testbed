@@ -2,8 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../lib/common.sh
-source "$script_dir/../lib/common.sh"
+# shellcheck source=../../scripts/lib/common.sh
+source "$script_dir/../../scripts/lib/common.sh"
 
 bootstrap_selected="false"
 approved_permission_set="false"
@@ -19,7 +19,7 @@ aws_args=()
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/bootstrap/ensure-permission-set.sh --bootstrap --approve-permission-set [options]
+  bootstrap/scripts/ensure-permission-set.sh --bootstrap --approve-permission-set [options]
 
 Create or update the IAM Identity Center permission set used for routine
 SFTP server operation. This command contacts AWS and changes durable IAM

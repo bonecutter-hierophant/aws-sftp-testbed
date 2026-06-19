@@ -2,8 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../lib/common.sh
-source "$script_dir/../lib/common.sh"
+# shellcheck source=../../scripts/lib/common.sh
+source "$script_dir/../../scripts/lib/common.sh"
 
 bootstrap_selected="false"
 approved_create="false"
@@ -17,7 +17,7 @@ aws_args=()
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/bootstrap/create-account.sh --bootstrap --approve-create-account \
+  bootstrap/scripts/create-account.sh --bootstrap --approve-create-account \
     --account-email <email> [options]
 
 Create the dedicated AWS Organizations member account for this project.

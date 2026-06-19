@@ -2,8 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../lib/common.sh
-source "$script_dir/../lib/common.sh"
+# shellcheck source=../../scripts/lib/common.sh
+source "$script_dir/../../scripts/lib/common.sh"
 
 bootstrap_selected="false"
 approved_assignment="false"
@@ -20,7 +20,7 @@ aws_args=()
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/bootstrap/assign-permission-set.sh --bootstrap --approve-assignment \
+  bootstrap/scripts/assign-permission-set.sh --bootstrap --approve-assignment \
     --operator-username <username> [options]
 
 Assign the project IAM Identity Center permission set to the operator user for

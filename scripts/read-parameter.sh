@@ -83,6 +83,8 @@ const value = JSON.parse(input);
 
 console.log("SFTP connection parameter");
 console.log("");
+console.log(`Schema version: ${value.schemaVersion || ""}`);
+console.log(`Protocol: ${value.protocol || ""}`);
 console.log(`Host: ${value.host || ""}`);
 console.log(`Public IP: ${value.publicIp || ""}`);
 console.log(`Port: ${value.port || ""}`);

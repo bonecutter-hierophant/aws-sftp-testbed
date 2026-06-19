@@ -18,6 +18,7 @@ Before changing code:
 For implementation:
 
 - Prefer AWS CLI, CloudFormation, and Bash helper scripts.
+- Keep one-time AWS account and IAM Identity Center setup helpers in `bootstrap/`.
 - Keep deployable infrastructure in `infra/cloudformation/`.
 - Keep command-line entrypoints in `scripts/` and shared shell helpers in `scripts/lib/`.
 - Keep repo-owned verification helpers in `tools/`.

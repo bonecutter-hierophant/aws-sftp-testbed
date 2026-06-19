@@ -1,6 +1,8 @@
 # Scripts
 
-This directory owns public command-line entrypoints for the SFTP testbed.
+This directory owns routine public command-line entrypoints for the SFTP testbed.
+
+One-time AWS account and IAM Identity Center setup lives in `bootstrap/`. Keep that setup phase isolated from routine deploy, inspect, smoke-test, stop, and destroy commands.
 
 Planned commands:
 
@@ -54,8 +56,4 @@ npm run smoke:test
 npm run destroy
 ```
 
-Bootstrap commands live in `scripts/bootstrap/`. They are intentionally separate from routine testbed commands because they may use management-account access to inspect or configure AWS Organizations and IAM Identity Center.
-
-Implemented bootstrap commands:
-
-- `bootstrap/inspect.sh`: read-only discovery for the current AWS caller, AWS Organizations accounts, and IAM Identity Center instances. Requires `--bootstrap`.
+Bootstrap commands must stay outside this directory so the routine command surface does not blur into management-account setup.

@@ -8,7 +8,7 @@ Date: 2026-06-18
 
 CloudFront is not the source of SFTP traffic. CloudFront can front HTTP and HTTPS workflows, but it does not proxy SFTP connections to this EC2 testbed.
 
-Choose `AllowedCidr` from the actual SFTP client execution path:
+The MVP assumes the operator can provide a stable or known source CIDR for the actual SFTP client execution path. Choose `AllowedCidr` from that path:
 
 - local developer machine: use the developer machine's current public IP as `/32`
 - CI runner: use the CI runner's documented outbound IP range, if stable and trusted
@@ -36,7 +36,7 @@ For backend systems, prefer a stable outbound path:
 1. Attach an Elastic IP to the NAT Gateway.
 1. Use that Elastic IP as `AllowedCidr` with a `/32` suffix.
 
-This project does not create that consumer-side egress path. It only creates the SFTP server side and enforces the caller-provided CIDR.
+This project does not create that consumer-side egress path and does not try to discover dynamic egress during normal deploy. It only creates the SFTP server side and enforces the caller-provided CIDR.
 
 ## Temporary Public Access
 
@@ -58,4 +58,4 @@ npm run diagnostics:disable
 
 This helper temporarily attaches a project-scoped SSM instance profile, asks the instance for recent `sshd` journal entries through SSM Run Command, and reports the source IP the server saw. It does not enable CloudWatch log ingestion. After identifying the source, replace temporary public access with the observed `/32` rule or destroy the runtime stack.
 
-This is intentionally a last-resort diagnostic workflow, not a separate server type and not a permanent exposure model.
+This is intentionally a last-resort diagnostic workflow, not normal egress discovery, not a separate server type, and not a permanent exposure model.

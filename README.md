@@ -4,6 +4,10 @@
 
 The project is designed for SimpleETL development and similar workflows that need a realistic external SFTP endpoint. It is not part of SimpleETL itself, and it is not intended to be a production SFTP service.
 
+## AWS Account Requirement
+
+This tool assumes you already have access to an AWS account and can sign in to it through the AWS CLI. The repository helps you deploy, inspect, test, stop, and destroy an SFTP test server inside that account; it does not replace the human-owned work of creating an AWS account, controlling the account email, setting up billing access, or enabling multi-factor authentication.
+
 The public shape matters because this kind of tool sits at an unusual boundary. It is not a long-running application in the traditional sense; it is closer to an installer or operator toolkit that affects AWS instead of a local machine. Its commands create, inspect, test, stop, and destroy cloud resources. Because those actions touch AWS accounts, IAM, public networking, credentials, and cleanup, the repository treats safety and repeatability as product features, not afterthoughts. Bootstrap access, routine operator access, runtime infrastructure, generated credentials, and documentation all get separate boundaries so the tool can be useful without normalizing broad cloud permissions.
 
 ## Current Status
@@ -35,6 +39,8 @@ The long-term goal is not merely "an EC2 instance with SSH enabled." The goal is
 
 ```text
 .
++-- bootstrap/
+|   +-- scripts/            One-time AWS account and IAM Identity Center setup helpers
 +-- docs/
 |   +-- architecture/       Repo-level structure and diagrams
 |   +-- operations/         Workflow, AWS boundary, and verification docs
@@ -48,6 +54,9 @@ The long-term goal is not merely "an EC2 instance with SSH enabled." The goal is
 ## Reader Path
 
 - Repo workflow: `AGENTS.md`
+- Bootstrap setup: `bootstrap/README.md`
+- Bootstrap walkthrough: `bootstrap/walkthrough.md`
+- Product version spec: `docs/specs/sftp-testbed-version-spec.md`
 - Feature process: `docs/operations/feature-development-workflow.md`
 - Public repository sanitization: `docs/operations/public-repository-sanitization.md`
 - AWS SFTP boundary: `docs/operations/aws-sftp-boundary.md`
@@ -58,7 +67,7 @@ The long-term goal is not merely "an EC2 instance with SSH enabled." The goal is
 - Sandbox-safe verification: `docs/operations/sandbox-safe-verification.md`
 - Verification gates: `docs/operations/scoped-verification-gates.md`
 - Project structure: `docs/architecture/project-structure.md`
-- Script entrypoints: `scripts/README.md`
+- Runtime script entrypoints: `scripts/README.md`
 - CloudFormation ownership: `infra/cloudformation/README.md`
 
 ## Verification
@@ -112,7 +121,7 @@ Deploy generates disposable SFTP credentials into `.local/<stack-name>-credentia
 
 By default, deploy discovers the account default VPC and a default subnet, then launches the instance with an explicit public IPv4 association. Accounts without a default VPC or default subnet can pass `--vpc-id` and `--subnet-id`; the subnet must be publicly routable for external clients such as FileZilla.
 
-If SFTP times out, first confirm that the deployed `AllowedCidr` exactly matches the public IP of the machine running the SFTP client. If that still does not explain the timeout, temporarily add the diagnostics helper to an existing server:
+The MVP assumes the SFTP client has a stable or known outbound source CIDR, and the operator supplies that value during deploy. If SFTP times out, first confirm that the deployed `AllowedCidr` exactly matches the public IP of the machine running the SFTP client. If that still does not explain the timeout, temporarily add the diagnostics helper to an existing server:
 
 ```text
 npm run diagnostics:enable
@@ -155,15 +164,19 @@ The smoke test requires `sshpass`, `sftp`, and `ssh-keyscan` for noninteractive 
 
 A live manual smoke test using FileZilla proved SFTP login, upload, list, download, delete, empty-directory behavior, wrong-user rejection, and wrong-password rejection against a restricted `/32` source rule. The scripted `smoke:test` path remains the repeatable command-line check for the successful transfer flow.
 
-Interim connection parameter schema:
+The MVP supports generated username/password authentication because that matches the known test workflow and keeps disposable credential handling simple. SSH public-key authentication is common for SFTP and may be added later, but it is deferred until key material generation, storage, publication, rotation, and cleanup are designed explicitly.
+
+Connection parameter schema v1:
 
 ```text
-host, publicIp, port, username, password, remotePath, hostKeyFingerprints, projectName
+schemaVersion, protocol, host, publicIp, port, username, password, remotePath, hostKeyFingerprints, projectName
 ```
 
-The default Parameter Store name is `/sftp-testbed/aws-sftp-server/connection`. For a desktop SFTP client such as FileZilla, use `host` or `publicIp`, `port` value `22`, `username`, and `password` from the Parameter Store value. The remote path is `/data`.
+The default Parameter Store name is `/sftp-testbed/aws-sftp-server/connection`. For a desktop SFTP client such as FileZilla, use `host` or `publicIp`, `port` value `22`, `username`, and `password` from the Parameter Store value. The MVP publishes a single `remotePath`, currently `/data`. The default SFTP account can read, write, and delete files there. Consumer systems decide whether their own workflow deletes files, moves them to archives, or leaves them in place. Additional semantic paths such as inbox, archive, or error folders should be added later only when a consuming workflow needs them.
 
-The MVP uses SSM Parameter Store `SecureString` for this published connection payload. This schema is interim until the consuming SFTP implementation settles. Secrets Manager is left as a future option for managed rotation workflows, but disposable testbed credential rotation should normally happen through redeploying the runtime stack.
+The MVP publishes this payload to SSM Parameter Store as a `SecureString`. `schemaVersion` is `1`, and `protocol` is `sftp`. Consumers do not have to use Parameter Store internally, but they should put the connection secret in a secret store they are comfortable operating, such as Parameter Store, Secrets Manager, another managed vault, or a local-only development store with clear handling rules. Avoid copying live credentials into source-controlled files or casual `.env` workflows; those are easy to leak through logs, screenshots, cloud tools, and agent-assisted development. Secrets Manager remains a future option for managed rotation workflows, but disposable testbed credential rotation should normally happen through redeploying the runtime stack.
+
+Recommended manual validation is to fetch the connection payload directly from Parameter Store using authenticated project access, then use those values from the SFTP client machine. Confirm the server answers at the published `host` or `publicIp`, accepts the published `username` and `password`, and exposes the expected `remotePath`. When the client displays an SSH host key prompt, compare it to `hostKeyFingerprints` when practical. For MVP this is recommended validation, not a hard requirement; rebuilt disposable servers get new host keys, while stop/start should preserve them.
 
 ## Diagram Rendering
 
@@ -175,9 +188,9 @@ This repository is public. Do not commit secrets, private keys, AWS account IDs,
 
 The committed project should stay conservative, explicit, and safe by default. Real AWS values belong in local environment variables, ignored local files, or AWS services, not in source control.
 
-AWS access should be durable and project-scoped, while the SFTP runtime stack should be disposable. Keep the account/user/profile setup available for future testbed runs, but destroy EC2 runtime resources when testing is complete.
+AWS access should be durable and project-scoped, while the SFTP runtime stack should be disposable. Keep the account, IAM Identity Center assignment, and local SSO-backed profile available for future testbed runs, but destroy EC2 runtime resources when testing is complete.
 
-The bootstrap lane is deliberately treated as different from ordinary use. Elevated access may be needed to create an AWS account, identity, and permission set; normal deploy/start/stop/destroy commands should use the narrower project-scoped access created by that bootstrap step.
+The bootstrap lane is deliberately treated as different from ordinary use. Elevated access may be needed to confirm an AWS account and configure the IAM Identity Center permission set and account assignment; normal deploy/start/stop/destroy commands should use the narrower project-scoped access created by that bootstrap step.
 
 ## Cost Posture
 
