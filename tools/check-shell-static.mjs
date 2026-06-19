@@ -24,10 +24,28 @@ for (const filePath of readShellFiles()) {
   }
 }
 
+requireScriptText("scripts/deploy.sh", "require_allowed_cidr", "deploy must require an explicit allowed CIDR");
+requireScriptText("scripts/deploy.sh", "AllowPublicCidr=$allow_public_cidr", "deploy must pass the explicit public CIDR override to CloudFormation");
+requireScriptText("scripts/deploy.sh", "CAPABILITY_NAMED_IAM", "deploy must acknowledge named IAM resources for opt-in diagnostics");
+requireScriptText("scripts/destroy.sh", "--approve-destroy", "destroy must require explicit approval");
+requireScriptText("scripts/destroy.sh", "aws ssm delete-parameter", "destroy must delete the runtime connection parameter by default");
+requireScriptText("scripts/enable-diagnostics.sh", "CAPABILITY_NAMED_IAM", "diagnostics enable must acknowledge named IAM resources");
+requireScriptText("scripts/disable-diagnostics.sh", "EnableSsmDiagnostics,ParameterValue=false", "diagnostics disable must remove the helper profile");
+requireScriptText("scripts/diagnose-source-ip.sh", "AWS-RunShellScript", "source IP diagnostics must use SSM Run Command");
+requireScriptText("scripts/update-parameter.sh", "--type SecureString", "connection publication must use SecureString");
+
 if (failures.length > 0) {
   console.error("Shell static check failed:");
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exitCode = 1;
+}
+
+function requireScriptText(filePath, needle, message) {
+  const content = readFileSync(join(repoRoot, filePath), "utf8");
+
+  if (!content.includes(needle)) {
+    failures.push(`${filePath}: ${message}`);
+  }
 }
 
 function readShellFiles() {

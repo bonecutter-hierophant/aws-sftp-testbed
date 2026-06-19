@@ -46,7 +46,13 @@ const requiredFiles = [
   "scripts/destroy.sh",
   "scripts/describe.sh",
   "scripts/update-parameter.sh",
+  "scripts/read-parameter.sh",
+  "scripts/enable-diagnostics.sh",
+  "scripts/diagnose-source-ip.sh",
+  "scripts/disable-diagnostics.sh",
   "scripts/smoke-test.sh",
+  "tools/check-bootstrap-static.mjs",
+  "tools/check-cloudformation-static.mjs",
   "tools/README.md"
 ];
 

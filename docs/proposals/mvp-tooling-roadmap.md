@@ -196,19 +196,19 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 
 - [x] Document that CloudFront is not the source of SFTP traffic.
 - [x] Add guidance for determining the outbound source IP/CIDR for the relevant backend execution path.
-- [x] Decide whether this repo should provide a helper command for CIDR discovery or only documentation.
+- [x] Add opt-in SSM diagnostics helpers to temporarily attach, use, and remove source-IP diagnostics without CloudWatch log ingestion.
 - [x] Keep Lambda/NAT/EIP assumptions explicit and revisitable.
 
 ### 9. Smoke Testing
 
-- [ ] Prove SFTP connection succeeds.
-- [ ] Upload a test file.
-- [ ] List files in `/data`.
-- [ ] Download the test file.
-- [ ] Delete the test file.
-- [ ] Confirm empty-directory behavior.
-- [ ] Exercise bad credentials or unreachable host failure path.
-- [ ] Keep smoke-test artifacts ignored and disposable.
+- [x] Prove SFTP connection succeeds.
+- [x] Upload a test file.
+- [x] List files in `/data`.
+- [x] Download the test file.
+- [x] Delete the test file.
+- [x] Confirm empty-directory behavior.
+- [x] Exercise bad credentials or unreachable host failure path.
+- [x] Keep smoke-test artifacts ignored and disposable.
 
 ### 10. Lifecycle And Cleanup
 
@@ -222,16 +222,16 @@ Follow-up requirement: when the CloudFormation template and runtime resource nam
 
 ### 11. Verification And Documentation
 
-- [ ] Add static checks for CloudFormation template shape.
-- [ ] Add dry-run/static verification for bootstrap scripts that does not create AWS accounts.
-- [ ] Add shell-script static checks for required safety guards.
-- [ ] Preserve the stable verification command pattern: public `npm run verify:*` commands should call repo-owned checks with visible gate names.
-- [ ] Add runtime smoke tests only as human-approved commands outside `verify:safe`.
-- [ ] Add docs for every implemented command.
-- [ ] Update architecture diagrams when lifecycle or resource boundaries change.
-- [ ] Keep `README.md` current with implemented command examples.
-- [ ] Run `npm run verify:safe` for routine changes.
-- [ ] Run `npm run verify:scoped structure,public-sanitization,shell-static,docs` before public pushes.
+- [x] Add static checks for CloudFormation template shape.
+- [x] Add dry-run/static verification for bootstrap scripts that does not create AWS accounts.
+- [x] Add shell-script static checks for required safety guards.
+- [x] Preserve the stable verification command pattern: public `npm run verify:*` commands should call repo-owned checks with visible gate names.
+- [x] Add runtime smoke tests only as human-approved commands outside `verify:safe`.
+- [x] Add docs for every implemented command.
+- [x] Update architecture diagrams when lifecycle or resource boundaries change.
+- [x] Keep `README.md` current with implemented command examples.
+- [x] Run `npm run verify:safe` for routine changes.
+- [x] Run `npm run verify:scoped structure,public-sanitization,shell-static,cloudformation-static,bootstrap-static,docs` before public pushes.
 
 ## Open Decisions
 
@@ -285,8 +285,8 @@ The MVP is complete when:
 - [ ] The testbed can be deployed from the command line.
 - [ ] The security group allows only the intended SFTP source CIDR unless explicit temporary public-open override is used.
 - [ ] Parameter Store contains current host/IP and credentials after deploy/start.
-- [ ] A smoke test proves connect, upload, list, download, delete, and empty-directory behavior.
+- [x] A smoke test proves connect, upload, list, download, delete, and empty-directory behavior.
 - [ ] Destroy tears down all runtime resources.
 - [ ] Destroy removes the runtime connection parameter and tears down all CloudFormation-managed resources.
 - [ ] Documentation describes setup, use, cost posture, safety defaults, and cleanup.
-- [ ] Public sanitization and sandbox-safe verification pass.
+- [x] Public sanitization and sandbox-safe verification pass.

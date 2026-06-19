@@ -7,6 +7,7 @@ participant "AWS CLI" as AwsCli
 participant "CloudFormation Stack" as Stack
 participant "EC2 SFTP Instance" as Ec2
 participant "Parameter Store" as Parameters
+participant "SSM Diagnostics Helper" as Diagnostics
 
 User -> Scripts: deploy with AllowedCidr
 Scripts -> Scripts: validate safety inputs
@@ -17,9 +18,22 @@ Scripts -> AwsCli: describe stack/instance
 AwsCli --> Scripts: current public host
 Scripts -> Parameters: write connection parameter
 
+opt source IP diagnosis
+  User -> Scripts: diagnostics:enable
+  Scripts -> AwsCli: update stack diagnostics flag
+  AwsCli -> Stack: attach temporary SSM instance profile
+  User -> Scripts: diagnose:source-ip
+  Scripts -> Diagnostics: read recent sshd journal via Run Command
+  Diagnostics --> Scripts: observed source IP
+  User -> Scripts: diagnostics:disable
+  Scripts -> AwsCli: update stack diagnostics flag
+  AwsCli -> Stack: remove temporary SSM instance profile
+end
+
 User -> Scripts: smoke-test
 Scripts -> Ec2: connect/upload/list/download/delete
 
 User -> Scripts: stop or destroy
 Scripts -> AwsCli: stop instance or delete stack
+Scripts -> Parameters: delete connection parameter on destroy
 @enduml

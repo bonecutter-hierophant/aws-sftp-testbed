@@ -11,6 +11,8 @@ The guiding rule is "touch a thing, test that thing." Documentation-only work sh
 - `structure`: checks required first-commit directories and owner docs.
 - `public-sanitization`: scans text files for common secrets, local user paths, generated keys, and public-repo hygiene risks.
 - `shell-static`: statically checks shell entrypoints for basic safety shape.
+- `cloudformation-static`: checks the CloudFormation template for safety-critical resource shape.
+- `bootstrap-static`: checks bootstrap scripts for lane selection, approval gates, and expected bounded AWS calls.
 - `docs`: scans workspace text files for trailing whitespace without requiring Git.
 
 These are not a complete product test suite yet. They are the foundation for one: public-safe repository shape first, static command safety second, deterministic dry-run checks next, and live AWS smoke tests only when a human intentionally runs them.
@@ -20,7 +22,7 @@ These are not a complete product test suite yet. They are the foundation for one
 ```text
 npm run verify:list
 npm run verify:safe
-npm run verify:scoped structure,public-sanitization,shell-static,docs
+npm run verify:scoped structure,public-sanitization,shell-static,cloudformation-static,bootstrap-static,docs
 ```
 
 Git-based recommendation is available as a human-approved checkpoint:
@@ -33,8 +35,9 @@ npm run verify:recommend:dirty
 
 - Documentation-only changes: `npm run verify:scoped public-sanitization,docs`
 - Script changes: `npm run verify:scoped structure,public-sanitization,shell-static,docs`
-- Infrastructure template changes: `npm run verify:scoped structure,public-sanitization,docs`
-- Tooling or package changes: `npm run verify:scoped structure,public-sanitization,shell-static,docs`
+- Bootstrap script changes: `npm run verify:scoped structure,public-sanitization,shell-static,bootstrap-static,docs`
+- Infrastructure template changes: `npm run verify:scoped structure,public-sanitization,cloudformation-static,docs`
+- Tooling or package changes: `npm run verify:safe`
 
 `verify:safe` is the normal frequent local lane. It does not contact AWS.
 

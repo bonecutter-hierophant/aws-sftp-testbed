@@ -11,7 +11,7 @@ stack_name="aws-sftp-server"
 approved_destroy="false"
 wait_for_delete="true"
 delete_parameter="true"
-parameter_name="/aws-sftp-server/connection"
+parameter_name="/sftp-testbed/aws-sftp-server/connection"
 
 usage() {
   cat <<'USAGE'
@@ -34,7 +34,7 @@ Options:
   --keep-parameter     Preserve the project-owned connection parameter.
   --parameter-name <name>
                        Parameter Store connection parameter. Defaults to
-                       /aws-sftp-server/connection.
+                       /sftp-testbed/aws-sftp-server/connection.
   --no-wait            Do not wait for stack deletion to complete.
   -h, --help           Show this help.
 USAGE

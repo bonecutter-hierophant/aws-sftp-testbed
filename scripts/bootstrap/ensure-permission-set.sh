@@ -106,17 +106,47 @@ write_inline_policy() {
       "Effect": "Allow",
       "Action": [
         "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:AuthorizeSecurityGroupEgress",
         "ec2:CreateSecurityGroup",
         "ec2:CreateTags",
         "ec2:DeleteSecurityGroup",
         "ec2:Describe*",
+        "ec2:GetConsoleOutput",
+        "ec2:RebootInstances",
+        "ec2:RevokeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupIngress",
         "ec2:RunInstances",
         "ec2:StartInstances",
         "ec2:StopInstances",
-        "ec2:TerminateInstances"
+        "ec2:TerminateInstances",
+        "ec2:AssociateIamInstanceProfile",
+        "ec2:DisassociateIamInstanceProfile",
+        "ec2:ReplaceIamInstanceProfileAssociation"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "ProjectSsmDiagnosticsIam",
+      "Effect": "Allow",
+      "Action": [
+        "iam:AddRoleToInstanceProfile",
+        "iam:AttachRolePolicy",
+        "iam:CreateInstanceProfile",
+        "iam:CreateRole",
+        "iam:DeleteInstanceProfile",
+        "iam:DeleteRole",
+        "iam:DetachRolePolicy",
+        "iam:GetInstanceProfile",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:RemoveRoleFromInstanceProfile",
+        "iam:TagInstanceProfile",
+        "iam:TagRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::*:role/sftp-testbed-${prefix}-ssm-diagnostics",
+        "arn:aws:iam::*:instance-profile/sftp-testbed-${prefix}-ssm-diagnostics"
+      ]
     },
     {
       "Sid": "ReadAmazonLinuxPublicAmiParameter",
@@ -132,12 +162,33 @@ write_inline_policy() {
       "Effect": "Allow",
       "Action": [
         "ssm:DeleteParameter",
-        "ssm:DescribeParameters",
         "ssm:GetParameter",
+        "ssm:GetParameterHistory",
         "ssm:GetParameters",
+        "ssm:ListTagsForResource",
         "ssm:PutParameter"
       ],
-      "Resource": "arn:aws:ssm:*:*:parameter/${prefix}/*"
+      "Resource": "arn:aws:ssm:*:*:parameter/sftp-testbed/${prefix}/*"
+    },
+    {
+      "Sid": "ProjectSsmRunCommandDiagnostics",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:CancelCommand",
+        "ssm:DescribeInstanceInformation",
+        "ssm:GetCommandInvocation",
+        "ssm:ListCommandInvocations",
+        "ssm:SendCommand"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ParameterStoreConsoleDiscovery",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:DescribeParameters"
+      ],
+      "Resource": "*"
     },
     {
       "Sid": "CallerAndRegionDiscovery",

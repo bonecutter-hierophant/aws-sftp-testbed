@@ -8,6 +8,8 @@
     "verify:structure": "node tools/check-structure.mjs",
     "verify:public-sanitization": "node tools/check-public-sanitization.mjs",
     "verify:shell-static": "node tools/check-shell-static.mjs",
+    "verify:cloudformation-static": "node tools/check-cloudformation-static.mjs",
+    "verify:bootstrap-static": "node tools/check-bootstrap-static.mjs",
     "verify:docs": "node tools/check-docs-whitespace.mjs",
     "verify:scoped": "node tools/run-verification.mjs",
     "verify:safe": "node tools/run-verification.mjs preset:safe",
@@ -26,6 +28,10 @@
     "destroy": "node tools/run-bash-script.mjs scripts/destroy.sh --approve-destroy",
     "describe": "node tools/run-bash-script.mjs scripts/describe.sh",
     "update:parameter": "node tools/run-bash-script.mjs scripts/update-parameter.sh",
+    "read:parameter": "node tools/run-bash-script.mjs scripts/read-parameter.sh",
+    "diagnostics:enable": "node tools/run-bash-script.mjs scripts/enable-diagnostics.sh",
+    "diagnose:source-ip": "node tools/run-bash-script.mjs scripts/diagnose-source-ip.sh",
+    "diagnostics:disable": "node tools/run-bash-script.mjs scripts/disable-diagnostics.sh",
     "smoke:test": "node tools/run-bash-script.mjs scripts/smoke-test.sh"
   },
   "repository": {

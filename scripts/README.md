@@ -12,6 +12,10 @@ Planned commands:
 - `destroy.sh`: delete the CloudFormation stack
 - `describe.sh`: print non-sensitive current stack and endpoint details
 - `update-parameter.sh`: write current connection details to SSM Parameter Store
+- `read-parameter.sh`: read current connection details from SSM Parameter Store
+- `enable-diagnostics.sh`: temporarily attach the SSM diagnostics helper to an existing stack
+- `diagnose-source-ip.sh`: read recent `sshd` source IPs through SSM Run Command when diagnostics are enabled
+- `disable-diagnostics.sh`: remove the SSM diagnostics helper after diagnosis
 - `smoke-test.sh`: prove SFTP connect, upload, list, download, and delete behavior
 
 Shared helpers live in `scripts/lib/`.
@@ -28,6 +32,10 @@ Implemented routine commands:
 - `stop.sh`: stops EC2 compute while warning that attached storage and other resources may still incur charges.
 - `destroy.sh`: deletes the CloudFormation-managed runtime stack and removes the project-owned connection parameter by default, while preserving durable account access. Direct script callers can pass `--keep-parameter` for explicit debugging or handoff cases.
 - `update-parameter.sh`: creates or updates the project-owned SSM Parameter Store SecureString connection parameter from current stack outputs and local generated credentials.
+- `read-parameter.sh`: reads the project-owned SSM Parameter Store SecureString connection parameter with decryption, redacting the password unless `--show-sensitive` is passed.
+- `enable-diagnostics.sh`: updates an existing stack to attach the project-scoped SSM diagnostics instance profile.
+- `diagnose-source-ip.sh`: queries recent `sshd` journal entries through SSM Run Command to identify the source IP the server saw for SFTP attempts.
+- `disable-diagnostics.sh`: updates an existing stack to remove the project-scoped SSM diagnostics instance profile.
 - `smoke-test.sh`: uses `sshpass`, `sftp`, and `ssh-keyscan` to prove connect, upload, list, download, delete, and post-delete list behavior.
 
 Common deploy form:
@@ -38,6 +46,10 @@ npm run describe
 npm run stop
 npm run start
 npm run update:parameter
+npm run read:parameter
+npm run diagnostics:enable
+npm run diagnose:source-ip
+npm run diagnostics:disable
 npm run smoke:test
 npm run destroy
 ```

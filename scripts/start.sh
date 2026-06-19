@@ -9,7 +9,7 @@ profile="${AWS_SFTP_SERVER_PROFILE:-aws-sftp-server-operator}"
 region="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-1}}"
 stack_name="aws-sftp-server"
 wait_for_running="true"
-parameter_name="/aws-sftp-server/connection"
+parameter_name="/sftp-testbed/aws-sftp-server/connection"
 skip_parameter_update="false"
 
 usage() {
@@ -26,7 +26,7 @@ Options:
                        or us-west-1.
   --stack-name <name>  CloudFormation stack name. Defaults to aws-sftp-server.
   --parameter-name <name> SSM Parameter Store name. Defaults to
-                          /aws-sftp-server/connection.
+                          /sftp-testbed/aws-sftp-server/connection.
   --skip-parameter-update Do not refresh Parameter Store after start.
   --no-wait            Do not wait for EC2 instance-running state.
   -h, --help           Show this help.

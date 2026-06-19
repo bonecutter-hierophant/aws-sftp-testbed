@@ -88,6 +88,8 @@ Current gates:
 - `structure` confirms the documented owner folders and required docs exist.
 - `public-sanitization` scans text files for common secrets, local user paths, generated keys, and public-repo hygiene risks.
 - `shell-static` checks shell entrypoints for basic safety shape.
+- `cloudformation-static` checks safety-critical CloudFormation template shape.
+- `bootstrap-static` checks bootstrap scripts for lane selection, approval gates, and expected bounded AWS calls.
 - `docs` checks text files for trailing whitespace.
 
 Future runtime work should add deterministic dry-run checks before any live AWS smoke test becomes part of the workflow.
@@ -110,6 +112,16 @@ Deploy generates disposable SFTP credentials into `.local/<stack-name>-credentia
 
 By default, deploy discovers the account default VPC and a default subnet, then launches the instance with an explicit public IPv4 association. Accounts without a default VPC or default subnet can pass `--vpc-id` and `--subnet-id`; the subnet must be publicly routable for external clients such as FileZilla.
 
+If SFTP times out, first confirm that the deployed `AllowedCidr` exactly matches the public IP of the machine running the SFTP client. If that still does not explain the timeout, temporarily add the diagnostics helper to an existing server:
+
+```text
+npm run diagnostics:enable
+npm run diagnose:source-ip
+npm run diagnostics:disable
+```
+
+This attaches a project-scoped SSM instance profile so the helper can read recent `sshd` journal entries through SSM Run Command, then removes that profile when diagnosis is complete. It does not enable CloudWatch log ingestion and is not part of normal server operation.
+
 Common lifecycle commands:
 
 ```text
@@ -127,6 +139,12 @@ Deploy and start refresh the project-owned connection parameter by default. You 
 npm run update:parameter
 ```
 
+When console access is unavailable, read the published connection value through the CLI:
+
+```text
+npm run read:parameter -- show-sensitive
+```
+
 Run the SFTP smoke test after the instance is reachable:
 
 ```text
@@ -135,13 +153,15 @@ npm run smoke:test
 
 The smoke test requires `sshpass`, `sftp`, and `ssh-keyscan` for noninteractive password authentication.
 
+A live manual smoke test using FileZilla proved SFTP login, upload, list, download, delete, empty-directory behavior, wrong-user rejection, and wrong-password rejection against a restricted `/32` source rule. The scripted `smoke:test` path remains the repeatable command-line check for the successful transfer flow.
+
 Interim connection parameter schema:
 
 ```text
 host, publicIp, port, username, password, remotePath, hostKeyFingerprints, projectName
 ```
 
-For a desktop SFTP client such as FileZilla, use `host` or `publicIp`, `port` value `22`, `username`, and `password` from the Parameter Store value. The remote path is `/data`.
+The default Parameter Store name is `/sftp-testbed/aws-sftp-server/connection`. For a desktop SFTP client such as FileZilla, use `host` or `publicIp`, `port` value `22`, `username`, and `password` from the Parameter Store value. The remote path is `/data`.
 
 The MVP uses SSM Parameter Store `SecureString` for this published connection payload. This schema is interim until the consuming SFTP implementation settles. Secrets Manager is left as a future option for managed rotation workflows, but disposable testbed credential rotation should normally happen through redeploying the runtime stack.
 

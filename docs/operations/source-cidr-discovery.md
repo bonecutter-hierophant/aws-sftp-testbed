@@ -16,6 +16,17 @@ Choose `AllowedCidr` from the actual SFTP client execution path:
 - AWS ECS, EC2, or batch worker in a private subnet: use the NAT Gateway Elastic IP as `/32`
 - AWS workload with direct public egress and no static IP: add stable egress first, or treat the source as unsuitable for a narrow `AllowedCidr`
 
+## First Diagnostic Check
+
+When SFTP times out, verify the source IP before adding diagnostic infrastructure:
+
+1. Run an IP check from the same machine and network that will run the SFTP client.
+1. Copy the value directly where possible.
+1. Compare the deployed `AllowedCidr` and the observed IP character by character.
+1. Check for transposed digits before widening access.
+
+Most timeout failures should be handled here. If the IP was mistyped, fix the security group or redeploy with the corrected `/32`.
+
 ## Stable Egress
 
 For backend systems, prefer a stable outbound path:
@@ -35,6 +46,16 @@ This project does not create that consumer-side egress path. It only creates the
 npm run deploy -- 0.0.0.0/0 allow-public-cidr
 ```
 
-## Future Helper Decision
+## Diagnostic Helper
 
-This repository should document CIDR selection for now rather than provide a generic discovery command. A helper can be added later for narrow cases, such as detecting the current local public IP for developer-only testing, but backend egress discovery needs application-specific context.
+Use the SSM diagnostics helper only when the simple IP check does not explain the timeout, such as when a network appears to route SFTP differently from browser traffic:
+
+```text
+npm run diagnostics:enable
+npm run diagnose:source-ip
+npm run diagnostics:disable
+```
+
+This helper temporarily attaches a project-scoped SSM instance profile, asks the instance for recent `sshd` journal entries through SSM Run Command, and reports the source IP the server saw. It does not enable CloudWatch log ingestion. After identifying the source, replace temporary public access with the observed `/32` rule or destroy the runtime stack.
+
+This is intentionally a last-resort diagnostic workflow, not a separate server type and not a permanent exposure model.

@@ -15,9 +15,11 @@ subnet_id=""
 sftp_username="sftpuser"
 allowed_cidr=""
 allow_public_cidr="false"
+enable_ssm_diagnostics="false"
 show_sensitive="false"
-parameter_name="/aws-sftp-server/connection"
+parameter_name="/sftp-testbed/aws-sftp-server/connection"
 skip_parameter_update="false"
+rotate_password="false"
 
 usage() {
   cat <<'USAGE'
@@ -44,8 +46,12 @@ Options:
                                in the selected VPC.
   --sftp-username <name>       SFTP username. Defaults to sftpuser.
   --parameter-name <name>      SSM Parameter Store name. Defaults to
-                               /aws-sftp-server/connection.
+                               /sftp-testbed/aws-sftp-server/connection.
   --skip-parameter-update      Do not refresh Parameter Store after deploy.
+  rotate-password,
+  --rotate-password            Generate a new disposable password instead of
+                               reusing an existing local credential file.
+  show-sensitive,
   --show-sensitive             Print the generated disposable SFTP password.
   -h, --help                   Show this help.
 
@@ -61,7 +67,7 @@ while [[ $# -gt 0 ]]; do
       allowed_cidr="$2"
       shift 2
       ;;
-    --allow-public-cidr)
+    --allow-public-cidr|allow-public-cidr|allow-public)
       allow_public_cidr="true"
       shift
       ;;
@@ -114,7 +120,11 @@ while [[ $# -gt 0 ]]; do
       skip_parameter_update="true"
       shift
       ;;
-    --show-sensitive)
+    --rotate-password|rotate-password)
+      rotate_password="true"
+      shift
+      ;;
+    --show-sensitive|show-sensitive)
       show_sensitive="true"
       shift
       ;;
@@ -123,12 +133,6 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      if [[ "$1" == "allow-public-cidr" || "$1" == "allow-public" ]]; then
-        allow_public_cidr="true"
-        shift
-        continue
-      fi
-
       if [[ "$1" == --* ]]; then
         fail "Unknown argument: $1"
       fi
@@ -176,10 +180,18 @@ fi
 repo_root_path="$(repo_root)"
 credentials_dir="$repo_root_path/.local"
 credentials_file="$credentials_dir/${stack_name}-credentials.env"
-sftp_password="$(openssl rand -base64 36 | tr -d '\r\n')"
 
 mkdir -p "$credentials_dir"
 chmod 700 "$credentials_dir" 2>/dev/null || true
+
+if [[ -f "$credentials_file" && "$rotate_password" != "true" ]]; then
+  # shellcheck disable=SC1090
+  source "$credentials_file"
+  sftp_password="${SFTP_PASSWORD:-}"
+  [[ -n "$sftp_password" ]] || fail "Existing credentials file is missing SFTP_PASSWORD. Re-run with --rotate-password to replace it."
+else
+  sftp_password="$(openssl rand -base64 36 | tr -d '\r\n')"
+fi
 
 cat >"$credentials_file" <<CREDENTIALS
 SFTP_USERNAME=$sftp_username
@@ -224,6 +236,7 @@ aws cloudformation deploy \
   --parameter-overrides \
     "AllowedCidr=$allowed_cidr" \
     "AllowPublicCidr=$allow_public_cidr" \
+    "EnableSsmDiagnostics=$enable_ssm_diagnostics" \
     "InstanceType=$instance_type" \
     "VpcId=$vpc_id" \
     "SubnetId=$subnet_id" \
@@ -233,6 +246,7 @@ aws cloudformation deploy \
   --tags \
     "Project=$project_name" \
     "ManagedBy=aws-sftp-testbed" \
+  --capabilities CAPABILITY_NAMED_IAM \
   --no-fail-on-empty-changeset
 
 printf '\n'

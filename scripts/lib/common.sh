@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Prevent Git Bash/MSYS from rewriting AWS parameter names such as
+# /sftp-testbed/aws-sftp-server/connection into Windows filesystem paths.
+export MSYS_NO_PATHCONV=1
+
 repo_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd
 }

@@ -44,6 +44,16 @@ Parameters:
     MinLength: 16
     MaxLength: 128
     Description: Disposable SFTP password supplied by the deploy script. Do not commit or print this value.
+  EnableSsmDiagnostics:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "false"
+      - "true"
+    Description: Attach a project-scoped SSM instance profile so Run Command can inspect SFTP auth logs.
+
+Conditions:
+  EnableSsmDiagnosticsCondition: !Equals [!Ref EnableSsmDiagnostics, "true"]
 
 Rules:
   PublicCidrRequiresOverride:
@@ -83,6 +93,36 @@ Resources:
         - Key: ManagedBy
           Value: aws-sftp-testbed
 
+  SftpDiagnosticsRole:
+    Type: AWS::IAM::Role
+    Condition: EnableSsmDiagnosticsCondition
+    Properties:
+      RoleName: !Sub "sftp-testbed-${ProjectName}-ssm-diagnostics"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Component
+          Value: sftp-ssm-diagnostics-role
+        - Key: ManagedBy
+          Value: aws-sftp-testbed
+
+  SftpDiagnosticsInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Condition: EnableSsmDiagnosticsCondition
+    Properties:
+      InstanceProfileName: !Sub "sftp-testbed-${ProjectName}-ssm-diagnostics"
+      Roles:
+        - !Ref SftpDiagnosticsRole
+
   SftpInstance:
     Type: AWS::EC2::Instance
     Properties:
@@ -94,6 +134,10 @@ Resources:
           GroupSet:
             - !Ref SftpSecurityGroup
           SubnetId: !Ref SubnetId
+      IamInstanceProfile: !If
+        - EnableSsmDiagnosticsCondition
+        - !Ref SftpDiagnosticsInstanceProfile
+        - !Ref AWS::NoValue
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
@@ -186,3 +230,6 @@ Outputs:
   RemotePath:
     Description: Remote path visible to SFTP clients.
     Value: /data
+  SsmDiagnosticsEnabled:
+    Description: Whether SSM Run Command diagnostics are enabled for this instance.
+    Value: !Ref EnableSsmDiagnostics

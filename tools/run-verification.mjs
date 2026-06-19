@@ -10,13 +10,15 @@ const gateDefinitions = new Map([
   ["structure", ["node", ["tools/check-structure.mjs"]]],
   ["public-sanitization", ["node", ["tools/check-public-sanitization.mjs"]]],
   ["shell-static", ["node", ["tools/check-shell-static.mjs"]]],
+  ["cloudformation-static", ["node", ["tools/check-cloudformation-static.mjs"]]],
+  ["bootstrap-static", ["node", ["tools/check-bootstrap-static.mjs"]]],
   ["docs", ["node", ["tools/check-docs-whitespace.mjs"]]]
 ]);
 
 const presets = new Map([
   ["docs", ["public-sanitization", "docs"]],
-  ["safe", ["structure", "public-sanitization", "shell-static", "docs"]],
-  ["review", ["structure", "public-sanitization", "shell-static", "docs"]]
+  ["safe", ["structure", "public-sanitization", "shell-static", "cloudformation-static", "bootstrap-static", "docs"]],
+  ["review", ["structure", "public-sanitization", "shell-static", "cloudformation-static", "bootstrap-static", "docs"]]
 ]);
 
 const recommendationRules = [
@@ -25,9 +27,11 @@ const recommendationRules = [
   [/^\.gitignore$/, ["structure", "public-sanitization", "docs"]],
   [/^package(-lock)?\.json$/, ["structure", "public-sanitization", "docs"]],
   [/^docs\//, ["public-sanitization", "docs"]],
+  [/^infra\/cloudformation\//, ["structure", "public-sanitization", "cloudformation-static", "docs"]],
   [/^infra\//, ["structure", "public-sanitization", "docs"]],
+  [/^scripts\/bootstrap\//, ["structure", "public-sanitization", "shell-static", "bootstrap-static", "docs"]],
   [/^scripts\//, ["structure", "public-sanitization", "shell-static", "docs"]],
-  [/^tools\//, ["structure", "public-sanitization", "shell-static", "docs"]]
+  [/^tools\//, ["structure", "public-sanitization", "shell-static", "cloudformation-static", "bootstrap-static", "docs"]]
 ];
 
 const args = process.argv.slice(2);

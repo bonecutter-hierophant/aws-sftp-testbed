@@ -34,7 +34,7 @@ The identity should be scoped to:
 
 - deploy, update, describe, and delete this project's CloudFormation stack
 - create, tag, describe, start, stop, and terminate only this project's EC2 resources
-- manage the project security group rules needed for SFTP
+- manage the project security group ingress and egress rules needed for the runtime stack
 - create or update the project-owned Parameter Store connection parameter
 - pass only the IAM role required by the EC2 instance profile
 - read the SSM public AMI parameter for Amazon Linux 2023
@@ -166,10 +166,13 @@ The bootstrap workflow creates the `AwsSftpServer-Operator` permission set with 
 Routine operator permissions should include only:
 
 - CloudFormation actions needed to create, update, inspect, and delete this project's stack
-- EC2 actions needed to create, tag, inspect, start, stop, and terminate this project's runtime resources
-- security group actions needed for the explicit SFTP ingress boundary
+- EC2 actions needed to create, tag, inspect, read console output for bootstrap diagnostics, reboot, start, stop, and terminate this project's runtime resources
+- security group actions needed for the explicit SFTP ingress boundary and CloudFormation-managed egress rule
 - SSM public parameter reads for the Amazon Linux 2023 AMI
 - SSM Parameter Store actions needed to create, read, update, and optionally delete the project-owned connection parameter
+- Parameter Store console discovery actions needed to list parameters, with value access still scoped to the project-owned connection path
+- SSM Run Command permissions for optional source-IP diagnostics when the stack is deployed with SSM diagnostics enabled
+- IAM role and instance-profile permissions limited to the project-scoped SSM diagnostics instance profile
 - caller identity and account metadata reads needed for validation and diagnostics
 
 The current CloudFormation runtime shape does not require an EC2 instance profile because instance bootstrap does not call AWS APIs. If a future runtime change adds an instance profile, add IAM role, instance profile, and pass-role permissions only for project-prefixed resources and document why they are needed.
@@ -181,7 +184,7 @@ Routine operator permissions should not include:
 - broad administrator access
 - access to unrelated project accounts
 - permission to close AWS accounts
-- permission to delete durable project connection parameters as part of normal runtime teardown
+- permission to manage Parameter Store values outside this project's connection-parameter path
 
 A committed sanitized IAM policy template should be added only after the CloudFormation template and runtime resource names are implemented. Until then, keep the public documentation at the permission-category level and keep any live policy output out of source control.
 

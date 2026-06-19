@@ -25,6 +25,10 @@ The MVP publishes current SFTP connection details to AWS Systems Manager Paramet
 
 AWS Secrets Manager remains a future option if managed credential rotation becomes a requirement, but it is not the default for MVP connection publication because this testbed should avoid durable paid secret resources when a short-lived encrypted parameter is sufficient.
 
+Parameter Store names must not start with provider-reserved prefixes such as `aws` or `ssm`. Put the project or domain namespace first. The default connection parameter path is `/sftp-testbed/aws-sftp-server/connection`, not `/aws-sftp-server/connection`.
+
+Use this naming convention for new AWS-owned names and paths where provider-reserved prefixes might apply: start with a neutral project namespace such as `sftp-testbed`, then add the specific resource or account label.
+
 Do not use by default:
 
 - AWS Transfer Family

@@ -29,5 +29,6 @@ Current MVP shape:
 - uses generated password authentication for the MVP
 - defers SSH public-key authentication until key material handling is reviewed separately
 - avoids Elastic IP, NAT Gateway, load balancer, AWS Transfer Family, and multi-AZ resources
-- avoids an EC2 instance profile because user-data bootstrap does not call AWS APIs
+- avoids an EC2 instance profile by default because user-data bootstrap does not call AWS APIs
+- can temporarily attach an SSM diagnostics instance profile through helper scripts for low-cost source-IP diagnosis
 - outputs instance ID, public DNS, public IP, VPC ID, subnet ID, security group ID, port, username, remote path, and project name

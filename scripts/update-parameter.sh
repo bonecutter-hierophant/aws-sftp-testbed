@@ -8,7 +8,7 @@ source "$script_dir/lib/common.sh"
 profile="${AWS_SFTP_SERVER_PROFILE:-aws-sftp-server-operator}"
 region="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-1}}"
 stack_name="aws-sftp-server"
-parameter_name="/aws-sftp-server/connection"
+parameter_name="/sftp-testbed/aws-sftp-server/connection"
 show_sensitive="false"
 
 usage() {
@@ -27,7 +27,8 @@ Options:
                              or us-west-1.
   --stack-name <name>        CloudFormation stack name. Defaults to aws-sftp-server.
   --parameter-name <name>    SSM parameter name. Defaults to
-                             /aws-sftp-server/connection.
+                             /sftp-testbed/aws-sftp-server/connection.
+  show-sensitive,
   --show-sensitive           Print the parameter JSON. Avoid in shared terminals.
   -h, --help                 Show this help.
 
@@ -66,7 +67,7 @@ while [[ $# -gt 0 ]]; do
       parameter_name="$2"
       shift 2
       ;;
-    --show-sensitive)
+    --show-sensitive|show-sensitive)
       show_sensitive="true"
       shift
       ;;
